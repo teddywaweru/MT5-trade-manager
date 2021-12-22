@@ -128,5 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Raw PyQt5 .ui files
-.ui
+#Raw PyQt5 Layout Files
+*.ui
+
+#VS Code Folder
+.vscode
