@@ -532,6 +532,7 @@ class DWX_ZeroMQ_Connector():
                                 
                                 self._thread_data_output = _data
                                 if self._verbose:
+                                    pass
                                     print(_data) # default logic
                                     
                             except Exception as ex:
