@@ -26,7 +26,7 @@ class DwxModel():
 
 
     @Slot()
-    def subscribe_marketdata(self, list_of_pairs):
+    def subscribe_marketdata(self, list_of_pairs = ['AUDCAD']):
         for pair in list_of_pairs:
             #subscribe to Pairs in List
             self.ZMQ_._DWX_MTX_SUBSCRIBE_MARKETDATA_(pair)
@@ -34,7 +34,7 @@ class DwxModel():
 
 
     @Slot()
-    def send_hist_request(self, hist_dict_request):
+    def send_hist_request(self, hist_dict_request ):
         if len(hist_dict_request) == 0:
             return print('Empty Request.')
         for request in hist_dict_request:
@@ -56,16 +56,13 @@ class DwxModel():
             
             #create the label in the History_DB keys
             #A00 change timestamp. add try except loops
-            hist_db_key = generate_hist_db_key(request['_symbol'], request.get('_timestamp', 1440))
+            hist_db_key = self.generate_hist_db_key(request['_symbol'], request.get('_timestamp', 1440))
             
-            #Creaate data manipulation object for basic Data Wrangling
-            data_wrang = data_manipulation(self.ZMQ_._History_DB[hist_label])
-
-            #calculate ATR. Expects to return a DataFrame
-            df = data_wrang.calculate_atr()
+            #Create data manipulation object for basic Data Wrangling
+            #Returns DataFrame with OHLC & atr
+            data_wrang = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
 
 
-            self.ZMQ_._History_DB[hist_label]
 
     # Close all trades
     @Slot()
@@ -85,14 +82,14 @@ class DwxModel():
     # Prepare New Trade. Involves calculating all necessary parameters for the order.
     # These form the default values that may then be changed/edited manually.
     @Slot()
-    def prepare_new_trade(self, _symbol):
+    def prepare_new_trade(self, _symbol = 'EURGBP'):
         # Update History_DB. Daily Data selected by default.
-        #A00 Change code to work for various timeframes. 
+        #A00 Change code to work for various timeframes.
         self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
 
         #Generate History DB Key based on symbol & timeframe
         #A00 Change code to work for various timeframes. 
-        hist_db_key = generate_hist_db_key(_symbol, 1440)
+        hist_db_key = self.generate_hist_db_key(_symbol, 1440)
 
         #Create DataFrame from data collected fron Historical Data
         new_trade_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
@@ -100,6 +97,7 @@ class DwxModel():
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict. For now, this is collected from the thread data output dict.
         self.ZMQ_._DWX_MTX_GET_ACCOUNT_INFO_()
+        time.sleep(5)
         account_info = self.ZMQ_._thread_data_output
 
         #Initiate  Risk Management Class
@@ -109,7 +107,7 @@ class DwxModel():
 
         # To calculate Pip Value per Trade, the symbol has to be compared against the USD exchange value since this is the current account currency
         # If the USD is not in the 
-        if 'USD' not in _symbol:
+        # if 'USD' not in _symbol:
 
 
         # Symbol against USD if USD not in _symbol
@@ -118,17 +116,17 @@ class DwxModel():
 
 
     # Open New Trade
-    @Slot()
-    def new_trade(self, _symbol):
-        new_trade = money_management(self.ZMQ_)
-        self._type = 
-        self._symbol = 
-        self._price = 
-        self._SL = new_trade.calc_SL()
-        self._comment = new_trade.calc_TP() 
-        self._lots = new_trade.calc_lot()
-        self._magic = 
-        self._ticket = 
+    # @Slot()
+    # def new_trade(self, _symbol):
+    #     new_trade = money_management(self.ZMQ_)
+    #     self._type = 
+    #     self._symbol = 
+    #     self._price = 
+    #     self._SL = new_trade.calc_SL()
+    #     self._comment = new_trade.calc_TP() 
+    #     self._lots = new_trade.calc_lot()
+    #     self._magic = 
+    #     self._ticket = 
         
         #Set SL, TP, Margins, 
 
@@ -141,3 +139,4 @@ class DwxModel():
         return hist_db_key
 
         #A00 Clear historical DB
+
