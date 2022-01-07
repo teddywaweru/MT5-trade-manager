@@ -695,6 +695,22 @@ class DWX_ZeroMQ_Connector():
         
     ##########################################################################
 
+    # GET ACCOUNT INFORMATION
+    def _DWX_MTX_GET_ACCOUNT_INFO_(self):
+
+        try:
+            self.temp_order_dict['_action'] = 'GET_ACCOUNT_INFO'
+
+            # Execute
+            self._DWX_MTX_SEND_COMMAND_(**self.temp_order_dict)
+
+        except Exception as ex:
+            _exstr = "Exception Type {0}. Args:\n{1!r}"
+            _msg = _exstr.format(type(ex).__name__, ex.args)
+            print(_msg)
+        
+    ##########################################################################
+
 ##############################################################################
 
 def _DWX_ZMQ_CLEANUP_(_name='DWX_ZeroMQ_Connector',
