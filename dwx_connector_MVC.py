@@ -38,7 +38,7 @@ class DwxModel():
         if len(hist_dict_request) == 0:
             return print('Empty Request.')
         for request in hist_dict_request:
-            _symbol = request['_symbol']
+            _symbol = request.get('_symbol', 'EURGBP')
             #A00 Change timestamp from daily.
             _timestamp = request.get('_timestamp', 1440)
             _start = request.get('_start', '2022.01.01 00.00.00')
@@ -77,33 +77,42 @@ class DwxModel():
     # Get all open trades
     @Slot()
     def get_trades(self):
+        # ZMQ_ = dwx()
         self.ZMQ_._DWX_MTX_GET_ALL_OPEN_TRADES_()
 
     # Prepare New Trade. Involves calculating all necessary parameters for the order.
     # These form the default values that may then be changed/edited manually.
     @Slot()
-    def prepare_new_trade(self, _symbol = 'EURGBP'):
+    def prepare_new_trade(self):
+        print(time.time())
+        _symbol = 'EURGBP'
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
         self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
+        time.sleep(5)
 
         #Generate History DB Key based on symbol & timeframe
-        #A00 Change code to work for various timeframes. 
+        #A00 Change code to work for various timeframes.
         hist_db_key = self.generate_hist_db_key(_symbol, 1440)
 
-        #Create DataFrame from data collected fron Historical Data
+        #Create DataFrame object from data collected fron Historical Data
         new_trade_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
 
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict. For now, this is collected from the thread data output dict.
         self.ZMQ_._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(5)
+        time.sleep(0.5)
         account_info = self.ZMQ_._thread_data_output
 
         #Initiate  Risk Management Class
         # account balance
         # symbol
-        new_trade = risk_management(self.ZMQ_, account_info, new_trade_df, hist_db_key)
+        new_trade = risk_management(self.ZMQ_, 0.02, account_info, new_trade_df.data_df, hist_db_key)
+
+        trade = new_trade.calc_lot()
+
+        print(trade.SL)
+        time.time()
 
         # To calculate Pip Value per Trade, the symbol has to be compared against the USD exchange value since this is the current account currency
         # If the USD is not in the 
@@ -135,7 +144,7 @@ class DwxModel():
 
     # Create History Label
     def generate_hist_db_key(self, _symbol, _timeframe):
-        hist_db_key = '' + _symbol + '_' + self.periods[_timeframe]
+        hist_db_key = '' + _symbol + '_' + str(self.periods[_timeframe])
         return hist_db_key
 
         #A00 Clear historical DB

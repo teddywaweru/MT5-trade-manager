@@ -44,12 +44,13 @@ class risk_management():
         try:
             #Subscribe to market data of _symbol
             self.ZMQ_._DWX_MTX_SUBSCRIBE_MARKETDATA_(self._symbol)
+            time.sleep(0.05)
 
             #Request for Current Tracked Prices.
             self.ZMQ_._DWX_MTX_SEND_TRACKPRICES_REQUEST_([self._symbol])
+            time.sleep(2)
 
             #Allow time for the values to be loaded onto the Market_DB dict.
-            time.sleep(0.05)
 
             bid_symbol, ask_symbol = self.bid_ask_price(self._symbol)
 
@@ -92,7 +93,7 @@ class risk_management():
 
             # Calculate pip value for the trade ie. Pip = %Risk Acct. Amount / Risk Stop Loss
             #A00 add functionality for exotic pairs
-            if self.exotic_curr not in self._symbol:
+            if self._symbol[:3] not in self.exotic_curr and self._symbol[3:] not in self.exotic_curr:
 
                 atr_in_pips = atr * 10000
 
@@ -156,19 +157,15 @@ class risk_management():
 
         
         self.ZMQ_._DWX_MTX_SUBSCRIBE_MARKETDATA_(_symbol)
-        time.sleep(5)
+        time.sleep(0.05)
         
         self.ZMQ_._DWX_MTX_SEND_TRACKPRICES_REQUEST_([_symbol])
 
         #Pause to allow Market DB to be updated with recent values
-        time.sleep(5)
+        time.sleep(2)
 
         # Get last item in the dict for the symbol
-        bid_symbol, ask_symbol = list(self.ZMQ_._Market_Data_DB.values())[-1]
-
-        self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
-
-        self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+        bid_symbol, ask_symbol = list(self.ZMQ_._Market_Data_DB[_symbol].values())[-1]
 
         self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
 

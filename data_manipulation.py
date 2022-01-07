@@ -10,11 +10,17 @@ class data_manipulation():
     def __init__(self, data):
         if isinstance(data, list):      #instance of list expected when data has just been received from zmq server.
            
-            data = pd.Dataframe.from_dict(data)
-            data = data.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
-            data_df = pd.DataFrame.from_dict(data)
-            self.data_df['atr'] = self.data_df.ta.atr(length = 14)
+            data = pd.DataFrame.from_dict(data)
 
+            data = data.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
+            
+            data_df = pd.DataFrame.from_dict(data)
+            
+            data_df['atr'] = data_df.ta.atr(length = 14)
+            
+            self.data_df = data_df
+
+        
             #ATR will be included in each created DataFrame due to it's necessity in Risk Management.
 
     # Calculate RSI Value

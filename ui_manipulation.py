@@ -19,6 +19,7 @@ class CallUi(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
 
+        self.dwx_MVC = DwxModel()
         self.ui = main_window.Ui_MainWindow()
         self.ui.setupUi(self)
         self.setUpBtnconnect()
@@ -43,8 +44,8 @@ class CallUi(QtWidgets.QMainWindow):
         test_hist_req_data = [
             {'_symbol': 'EURUSD', '_timeframe': 1440, '_start': '2021.01.01 00:00:00', '_end': pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00') }
         ]
-        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(DwxModel.send_hist_request)
-        self.ui.PREPARE_NEW_TRADE.clicked.connect(DwxModel.prepare_new_trade)
+        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.dwx_MVC.send_hist_request)
+        self.ui.PREPARE_NEW_TRADE.clicked.connect(self.dwx_MVC.prepare_new_trade)
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
 
