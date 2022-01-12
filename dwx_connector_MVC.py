@@ -108,11 +108,8 @@ class DwxModel():
         # account balance
         # symbol
         new_trade = risk_management(self.ZMQ_, 0.02, account_info, new_trade_df.data_df, hist_db_key)
-
-        trade = new_trade.calc_lot()
-
-        print(trade.SL)
-        time.time()
+        new_trade.calc_lot()
+        return new_trade
 
         # To calculate Pip Value per Trade, the symbol has to be compared against the USD exchange value since this is the current account currency
         # If the USD is not in the 

@@ -22,6 +22,13 @@ class risk_management():
         self.hist_db_key = hist_db_key
         self._symbol = hist_db_key[:6]
         self._timeframe = hist_db_key[7:]
+
+        self.pip_value = None
+
+        self.stop_loss = None
+
+        self.take_profit = None
+        
         
         self.sec_symbol = None
 
@@ -58,10 +65,10 @@ class risk_management():
             if 'USD' in self._symbol:
                 
                 if 'USD' in self._symbol[:3]:
-                    pip_value = (bid_symbol + ask_symbol) / 2
+                    self.pip_value = (bid_symbol + ask_symbol) / 2
 
                 else:
-                    pip_value = 1
+                    self.pip_value = 1
             
             else:
 
@@ -74,7 +81,7 @@ class risk_management():
                     # Collect bid/ask prices from Market_DB
                     bid_sec_symbol, ask_sec_symbol = self.bid_ask_price(self.sec_symbol)
 
-                    pip_value = (bid_sec_symbol + ask_sec_symbol) / 2
+                    self.pip_value = (bid_sec_symbol + ask_sec_symbol) / 2
 
                 else:
                     self.sec_symbol = 'USD' + self._symbol[3:]
@@ -82,27 +89,28 @@ class risk_management():
                     # Collect bid/ask prices from Market_DB
                     bid_sec_symbol, ask_sec_symbol = self.bid_ask_price(self.sec_symbol)
 
-                    pip_value = 1 / ((bid_sec_symbol + ask_sec_symbol) / 2)
+                    self.pip_value = 1 / ((bid_sec_symbol + ask_sec_symbol) / 2)
 
             #ATR value from dataframe
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountbalance
             risk = self.account_info['_data']['accountbalance'] * self.risk
+            print(self.pip_value)
 
 
             # Calculate pip value for the trade ie. Pip = %Risk Acct. Amount / Risk Stop Loss
             #A00 add functionality for exotic pairs
             if self._symbol[:3] not in self.exotic_curr and self._symbol[3:] not in self.exotic_curr:
 
-                atr_in_pips = atr * 10000
+                self.atr_in_pips = atr * 10000
 
                 # Calculate the Pip Value based on the new trade to be taken, ie.
                 # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips) 
-                calc_pip_value = risk / atr_in_pips
+                self.calc_pip_value = risk / self.atr_in_pips
 
                 #To get the lot size, divide the current pip value of the _symbol by the calculated pip value of the new trade
-                lot_size = calc_pip_value / pip_value
+                lot_size = self.calc_pip_value / self.pip_value
 
 
 
@@ -112,8 +120,8 @@ class risk_management():
 
 
 
-            stop_loss = self.calc_SL(atr)
-            take_profit = self.calc_TP(atr)
+            self.stop_loss = self.calc_SL(atr)
+            self.take_profit = self.calc_TP(atr)
                 #To Calculate Pip value, sec_symbol / _symbol.
                 # ie. in AUDCAD, The pip value is calculated using the rate of AUDCAD / AUDUSD
 
