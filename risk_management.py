@@ -9,11 +9,12 @@ import pandas as pd
 class risk_management():
 
     
-    def __init__(self, ZMQ_ = None, risk = None, account_info = None, new_trade_df = None, hist_db_key = None):
+    def __init__(self, ZMQ_ = None, risk_ratio = None, account_info = None, new_trade_df = None, hist_db_key = None):
         
-        if risk is None:
-            risk = 0.02     # Default value for risk
-        self.risk = risk
+        if risk_ratio is None:
+            risk_ratio = 0.02     # Default value for risk
+        self.risk_ratio = risk_ratio
+        self.risk_amount = None
         if ZMQ_ is None:
             ZMQ_ = dwx()
         self.ZMQ_ = ZMQ_
@@ -28,6 +29,10 @@ class risk_management():
         self.stop_loss = None
 
         self.take_profit = None
+
+        self.lot_size = None
+
+        
         
         
         self.sec_symbol = None
@@ -95,7 +100,7 @@ class risk_management():
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountbalance
-            risk = self.account_info['_data']['accountbalance'] * self.risk
+            self.risk_amount = self.account_info['_data']['accountbalance'] * self.risk_ratio
             print(self.pip_value)
 
 
@@ -107,10 +112,10 @@ class risk_management():
 
                 # Calculate the Pip Value based on the new trade to be taken, ie.
                 # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips) 
-                self.calc_pip_value = risk / self.atr_in_pips
+                self.calc_pip_value = self.risk_amount / self.atr_in_pips
 
                 #To get the lot size, divide the current pip value of the _symbol by the calculated pip value of the new trade
-                lot_size = self.calc_pip_value / self.pip_value
+                self.lot_size = self.calc_pip_value / self.pip_value
 
 
 

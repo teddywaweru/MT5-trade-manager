@@ -10,13 +10,12 @@ class data_manipulation():
     def __init__(self, data):
         if isinstance(data, list):      #instance of list expected when data has just been received from zmq server.
            
-            data = pd.DataFrame.from_dict(data)
-
-            data = data.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
-            
             data_df = pd.DataFrame.from_dict(data)
+
+            data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
             
-            data_df['atr'] = data_df.ta.atr(length = 14)
+            
+            data_df['atr'] = data_df.ta.atr(length = 14, append = False)
             
             self.data_df = data_df
 

@@ -34,33 +34,35 @@ class DwxModel():
 
 
     @Slot()
-    def send_hist_request(self, hist_dict_request ):
-        if len(hist_dict_request) == 0:
+    def send_hist_request(self, hist_request ):
+        if hist_request == {}:
             return print('Empty Request.')
-        for request in hist_dict_request:
-            _symbol = request.get('_symbol', 'EURGBP')
-            #A00 Change timestamp from daily.
-            _timestamp = request.get('_timestamp', 1440)
-            _start = request.get('_start', '2022.01.01 00.00.00')
-            _end = request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00'))
-            #check whether the item has valid data
-            #is pair valid
-            # is timeframe int? otherwise show 15 min data. Or other default value?
-            # Automatically select start period? No. Should be provided, but automatically selected in the application.
-            #end time would always be now.
-            self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timestamp, _start, _end)
-            time.sleep(0.0005)
+        
+        _symbol = hist_request.get('_symbol', 'EURGBP')
+        #A00 Change timestamp from daily.
+        _timeframe = hist_request.get('_timeframe', 1440)
+        _start = hist_request.get('_start', '2022.01.01 00.00.00')
+        _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00'))
+        #check whether the item has valid data
+        #is pair valid
+        # is timeframe int? otherwise show 15 min data. Or other default value?
+        # Automatically select start period? No. Should be provided, but automatically selected in the application.
+        #end time would always be now.
+        self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
+        time.sleep(0.05)
+        print(_start)
 
         #Push collected data to data manipulation to prepare DataFrames that may be utilised at any time
-        for request in hist_dict_request:
-            
+        #ADD able to add multiple requests???
             #create the label in the History_DB keys
-            #A00 change timestamp. add try except loops
-            hist_db_key = self.generate_hist_db_key(request['_symbol'], request.get('_timestamp', 1440))
-            
-            #Create data manipulation object for basic Data Wrangling
-            #Returns DataFrame with OHLC & atr
-            data_wrang = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
+        #A00 change timestamp. add try except loops
+        hist_db_key = self.generate_hist_db_key(hist_request['_symbol'], hist_request.get('_timeframe', 1440))
+        
+        #Create data manipulation object for basic Data Wrangling
+        #Returns DataFrame with OHLC & atr
+        hist_db_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
+
+        return hist_db_key, hist_db_df
 
 
 
@@ -84,24 +86,32 @@ class DwxModel():
     # These form the default values that may then be changed/edited manually.
     @Slot()
     def prepare_new_trade(self):
-        print(time.time())
-        _symbol = 'EURGBP'
+        
+        #Dummy Data for testing
+        new_trade_request = {
+            '_symbol' : 'EURGBP',
+            '_timeframe' : 1440,
+            '_start' : '2021.12.01 00.00.00',
+            '_end' : pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
+        }
+        _symbol = new_trade_request['_symbol']
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
-        self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
-        time.sleep(5)
+        # self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
+        hist_db_key, new_trade_df = self.send_hist_request(new_trade_request)
+        time.sleep(0.005)
 
         #Generate History DB Key based on symbol & timeframe
         #A00 Change code to work for various timeframes.
-        hist_db_key = self.generate_hist_db_key(_symbol, 1440)
+        # hist_db_key = self.generate_hist_db_key(_symbol, 1440)
 
         #Create DataFrame object from data collected fron Historical Data
-        new_trade_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
+        # new_trade_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
 
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict. For now, this is collected from the thread data output dict.
         self.ZMQ_._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(0.5)
+        time.sleep(0.05)
         account_info = self.ZMQ_._thread_data_output
 
         #Initiate  Risk Management Class
