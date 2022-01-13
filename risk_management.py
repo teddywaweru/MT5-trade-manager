@@ -109,7 +109,7 @@ class risk_management():
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountbalance
-            self.risk_amount = self.account_info['_data']['accountbalance'] * self.risk_ratio
+            self.risk_amount = self.account_info['_data']['accountequity'] * self.risk_ratio
             print(self.risk_amount)
 
 
@@ -140,7 +140,7 @@ class risk_management():
                     # _symbol by the calculated pip value of the new trade
                     self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01
 
-                elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR': 
+                elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR':
                     self.atr_in_pips = atr * 1000
 
                     # Calculate the Pip Value based on the new trade to be taken, ie.

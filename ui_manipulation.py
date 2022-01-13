@@ -67,7 +67,7 @@ class CallUi(QtWidgets.QMainWindow):
         self.ui.ATR_IN_PIPS_TEXT.setText(str(round(prep_new_trade.atr_in_pips, 2)))
         self.ui.LOT_SIZE_TEXT.setText(str(str(round(prep_new_trade.lot_size, 2))))
         self.ui.RISK_AMOUNT_TEXT.setText(str(round(prep_new_trade.risk_amount, 4)))
-        self.ui.ACCOUNT_BALANCE_TEXT.setText(str(prep_new_trade.account_info['_data']['accountbalance']))
+        self.ui.ACCOUNT_BALANCE_TEXT.setText(str(prep_new_trade.account_info['_data']['accountequity']))
         self.ui.STOP_LOSS_TEXT.setText(str(round(prep_new_trade.stop_loss, 5)))
         self.ui.TAKE_PROFIT_TEXT.setText(str(round(prep_new_trade.take_profit, 5)))
 
