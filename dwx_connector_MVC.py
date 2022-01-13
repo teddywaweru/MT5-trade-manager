@@ -38,7 +38,7 @@ class DwxModel():
         if hist_request == {}:
             return print('Empty Request.')
         
-        _symbol = hist_request.get('_symbol', 'EURGBP')
+        _symbol = hist_request.get('_symbol', 'USDJPY')
         #A00 Change timestamp from daily.
         _timeframe = hist_request.get('_timeframe', 1440)
         _start = hist_request.get('_start', '2022.01.01 00.00.00')
@@ -49,7 +49,7 @@ class DwxModel():
         # Automatically select start period? No. Should be provided, but automatically selected in the application.
         #end time would always be now.
         self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
-        time.sleep(0.05)
+        time.sleep(0.5)
         print(_start)
 
         #Push collected data to data manipulation to prepare DataFrames that may be utilised at any time
@@ -89,7 +89,7 @@ class DwxModel():
         
         #Dummy Data for testing
         new_trade_request = {
-            '_symbol' : 'EURGBP',
+            '_symbol' : 'USDJPY',
             '_timeframe' : 1440,
             '_start' : '2021.12.01 00.00.00',
             '_end' : pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
@@ -99,7 +99,6 @@ class DwxModel():
         #A00 Change code to work for various timeframes.
         # self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
         hist_db_key, new_trade_df = self.send_hist_request(new_trade_request)
-        time.sleep(0.005)
 
         #Generate History DB Key based on symbol & timeframe
         #A00 Change code to work for various timeframes.

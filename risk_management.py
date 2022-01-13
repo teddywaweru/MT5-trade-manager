@@ -26,12 +26,21 @@ class risk_management():
 
         self.pip_value = None
 
+        self.atr_in_pips = None
+
         self.stop_loss = None
 
         self.take_profit = None
 
         self.lot_size = None
 
+        self.calc_pip_value = None
+
+        self._symbol_bid = None
+
+        self._symbol_ask = None
+
+        self.sl_multiplier = 1.5
         
         
         
@@ -39,11 +48,11 @@ class risk_management():
 
         #Major Currency pairs, where USD is the secondary currency traded.
         #ADD commodities ie XAG, XPT, XAU
-        self.major_curr = ['AUD', 'EUR', 'GBP', 'NZD']
+        self.major_curr = ['AUD', 'EUR', 'GBP', 'NZD', 'XAU', 'XAG', 'XPT']
 
         # Exotic pairs whose values do not conform to typical 5 point values ie. SEK, JPY
         #ADD all necessary pairs to be considered
-        self.exotic_curr = ['SEK', 'JPY', 'ZAR', 'XAG', 'XAU', 'XPT']
+        self.exotic_curr = ['SEK', 'JPY', 'ZAR',]
 
 
 
@@ -64,13 +73,13 @@ class risk_management():
 
             #Allow time for the values to be loaded onto the Market_DB dict.
 
-            bid_symbol, ask_symbol = self.bid_ask_price(self._symbol)
+            self._symbol_bid, self._symbol_ask = self.bid_ask_price(self._symbol)
 
             #check whether USD is part of the currency pair ('USD' since this is the account currency)
             if 'USD' in self._symbol:
                 
                 if 'USD' in self._symbol[:3]:
-                    self.pip_value = (bid_symbol + ask_symbol) / 2
+                    self.pip_value = 1 / ((self._symbol_bid + self._symbol_ask) / 2)
 
                 else:
                     self.pip_value = 1
@@ -84,46 +93,65 @@ class risk_management():
                     self.sec_symbol = self._symbol[3:] + 'USD'
 
                     # Collect bid/ask prices from Market_DB
-                    bid_sec_symbol, ask_sec_symbol = self.bid_ask_price(self.sec_symbol)
+                    sec_symbol_bid, sec_symbol_ask = self.bid_ask_price(self.sec_symbol)
 
-                    self.pip_value = (bid_sec_symbol + ask_sec_symbol) / 2
+                    self.pip_value = (sec_symbol_bid + sec_symbol_ask) / 2
 
                 else:
                     self.sec_symbol = 'USD' + self._symbol[3:]
 
                     # Collect bid/ask prices from Market_DB
-                    bid_sec_symbol, ask_sec_symbol = self.bid_ask_price(self.sec_symbol)
+                    sec_symbol_bid, sec_symbol_ask = self.bid_ask_price(self.sec_symbol)
 
-                    self.pip_value = 1 / ((bid_sec_symbol + ask_sec_symbol) / 2)
+                    self.pip_value = 1 / ((sec_symbol_bid + sec_symbol_ask) / 2)
 
             #ATR value from dataframe
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountbalance
             self.risk_amount = self.account_info['_data']['accountbalance'] * self.risk_ratio
-            print(self.pip_value)
+            print(self.risk_amount)
 
 
             # Calculate pip value for the trade ie. Pip = %Risk Acct. Amount / Risk Stop Loss
-            #A00 add functionality for exotic pairs
             if self._symbol[:3] not in self.exotic_curr and self._symbol[3:] not in self.exotic_curr:
 
                 self.atr_in_pips = atr * 10000
 
                 # Calculate the Pip Value based on the new trade to be taken, ie.
-                # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips) 
-                self.calc_pip_value = self.risk_amount / self.atr_in_pips
+                # Relating the risked amount (%Risk) to the risked pips (stoplossMultiplier * ATR_in_pips) 
+                self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
                 #To get the lot size, divide the current pip value of the _symbol by the calculated pip value of the new trade
-                self.lot_size = self.calc_pip_value / self.pip_value
+                # self.lot_size = self.calc_pip_value / self.pip_value
+                self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
+
+            # Functionality for exotic pairs whose atr_in_pips may vary from the major pairs
+            #a00 functionality for indices
+            else:
+                if self._symbol[3:] == 'JPY':
+                    self.atr_in_pips = atr * 100
+
+                    # Calculate the Pip Value based on the new trade to be taken, ie.
+                    # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips) 
+                    self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+
+                    #To get the lot size, divide the current pip value of the
+                    # _symbol by the calculated pip value of the new trade
+                    self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01
+
+                elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR': 
+                    self.atr_in_pips = atr * 1000
+
+                    # Calculate the Pip Value based on the new trade to be taken, ie.
+                    # Relating the risked amount (%Risk) to the risked pips
+                    # (factor * ATR_in_pips) 
+                    self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
 
-
-
-
-
-
-
+                    #To get the lot size, divide the current pip value of the _symbol
+                    # by the calculated pip value of the new trade
+                    self.lot_size = self.calc_pip_value / self.pip_value
 
             self.stop_loss = self.calc_SL(atr)
             self.take_profit = self.calc_TP(atr)
@@ -146,43 +174,48 @@ class risk_management():
 
     # calculate Stop Loss
     #A00 add functionality depending on whether trade is sell or buy, ie using buy or sell value?
-    def calc_SL(self, atr):
+    def calc_SL(self, atr, sl_multiplier = 1.5, trade_type = 'buy'):
         # SL calculated as 1.5x of ATR
+        if trade_type == 'buy':
+            stop_loss_pips = self._symbol_ask - sl_multiplier * atr
 
-        #A00 functionality for accepting factor value from user
-        factor = 1.5
+        else:
+            stop_loss_pips = self._symbol_ask + sl_multiplier * atr
 
-        return factor * atr
-
-        
+        return stop_loss_pips
         
 
     # Calculate Take Profit
-    def calc_TP(self, atr):
-        # TP calculated as 1x of ATR
-        factor = 1
+    def calc_TP(self, atr, tp_multiplier = 1.5, trade_type = 'buy'):
 
-        #A00 functionality for accepting factor value from user
-        return factor * atr
+        if trade_type == 'buy':
+            take_profit_pips = self._symbol_ask + tp_multiplier * atr
+
+        else:
+            take_profit_pips = self._symbol_ask - tp_multiplier * atr
+
+        return take_profit_pips
+        # TP calculated as 1.5x of ATR
+
 
     # Collect bid & ask prices of specific symbol after downloading current rates
     def bid_ask_price(self, _symbol):
 
-        
         self.ZMQ_._DWX_MTX_SUBSCRIBE_MARKETDATA_(_symbol)
         time.sleep(0.05)
         
         self.ZMQ_._DWX_MTX_SEND_TRACKPRICES_REQUEST_([_symbol])
 
         #Pause to allow Market DB to be updated with recent values
-        time.sleep(2)
+        time.sleep(1)
 
         # Get last item in the dict for the symbol
-        bid_symbol, ask_symbol = list(self.ZMQ_._Market_Data_DB[_symbol].values())[-1]
+        _symbol_bid, _symbol_ask = list(self.ZMQ_._Market_Data_DB[_symbol].values())[-1]
 
         self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+        self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+        self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
 
-        return bid_symbol, ask_symbol
+        return _symbol_bid, _symbol_ask
 
     # Create process that monitors specific trade scenarios.
-
