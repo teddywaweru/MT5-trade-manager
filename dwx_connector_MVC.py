@@ -49,8 +49,7 @@ class DwxModel():
         # Automatically select start period? No. Should be provided, but automatically selected in the application.
         #end time would always be now.
         self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
-        time.sleep(0.5)
-        print(_start)
+        time.sleep(1)
 
         #Push collected data to data manipulation to prepare DataFrames that may be utilised at any time
         #ADD able to add multiple requests???
@@ -60,7 +59,7 @@ class DwxModel():
         
         #Create data manipulation object for basic Data Wrangling
         #Returns DataFrame with OHLC & atr
-        hist_db_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
+        hist_db_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key]).data_df
 
         return hist_db_key, hist_db_df
 
@@ -85,48 +84,42 @@ class DwxModel():
     # Prepare New Trade. Involves calculating all necessary parameters for the order.
     # These form the default values that may then be changed/edited manually.
     @Slot()
-    def prepare_new_trade(self):
+    def prepare_new_trade(self, new_trade_dict):
         
         #Dummy Data for testing
-        new_trade_request = {
-            '_symbol' : 'USDJPY',
-            '_timeframe' : 1440,
-            '_start' : '2021.12.01 00.00.00',
-            '_end' : pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
-        }
-        _symbol = new_trade_request['_symbol']
+        new_trade_dict['_start'] = '2021.12.01 00.00.00'
+        new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
+        
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
         # self.ZMQ_._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
-        hist_db_key, new_trade_df = self.send_hist_request(new_trade_request)
+        hist_db_key, trade_hist_df = self.send_hist_request(new_trade_dict)
 
         #Generate History DB Key based on symbol & timeframe
         #A00 Change code to work for various timeframes.
         # hist_db_key = self.generate_hist_db_key(_symbol, 1440)
 
         #Create DataFrame object from data collected fron Historical Data
-        # new_trade_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
+        # trade_hist_df = data_manipulation(self.ZMQ_._History_DB[hist_db_key])
 
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict. For now, this is collected from the thread data output dict.
         self.ZMQ_._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(0.05)
+        time.sleep(1)
         account_info = self.ZMQ_._thread_data_output
 
         #Initiate  Risk Management Class
         # account balance
         # symbol
-        new_trade = risk_management(self.ZMQ_, 0.02, account_info, new_trade_df.data_df, hist_db_key)
+        new_trade = risk_management(self.ZMQ_,
+                                        new_trade_dict['_order'],
+                                        0.01,
+                                        account_info,
+                                        trade_hist_df,
+                                        hist_db_key)
         new_trade.calc_lot()
         return new_trade
 
-        # To calculate Pip Value per Trade, the symbol has to be compared against the USD exchange value since this is the current account currency
-        # If the USD is not in the 
-        # if 'USD' not in _symbol:
-
-
-        # Symbol against USD if USD not in _symbol
-        # ATR Value
 
 
 

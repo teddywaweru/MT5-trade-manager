@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Slot, Qt
@@ -60,7 +61,24 @@ class CallUi(QtWidgets.QMainWindow):
 
 
     def prepare_new_trade(self):
-        prep_new_trade = self.dwx_MVC.prepare_new_trade()
+        
+        _symbol = self.ui.CURRENCY_PAIRS_COMBOBOX.currentText()
+        if _symbol not in [self.ui.CURRENCY_PAIRS_COMBOBOX.itemText(i) for i in range(self.ui.CURRENCY_PAIRS_COMBOBOX.count())]:
+            _symbol = 'EURUSD'
+        #Check if the text entered is a valid currency pair that can be operated on ie. existing pairs on the list.
+        #Else default value is EURUSD
+        
+        _order = 'BUY' if self.ui.BUY_SELL_SLIDER.sliderPosition() else 'SELL'
+        #Default value of sider is 'SELL' (0)
+
+        _timeframe = 1440 
+
+        new_trade_dict = {
+            '_symbol': _symbol,
+            '_order': _order,
+            '_timeframe': _timeframe
+        }
+        prep_new_trade = self.dwx_MVC.prepare_new_trade(new_trade_dict)
         print(prep_new_trade.pip_value)
         print('Completed')
         self.ui.PIP_VALUE_TEXT.setText(str(round(prep_new_trade.pip_value, 4)))
@@ -70,7 +88,6 @@ class CallUi(QtWidgets.QMainWindow):
         self.ui.ACCOUNT_BALANCE_TEXT.setText(str(prep_new_trade.account_info['_data']['accountequity']))
         self.ui.STOP_LOSS_TEXT.setText(str(round(prep_new_trade.stop_loss, 5)))
         self.ui.TAKE_PROFIT_TEXT.setText(str(round(prep_new_trade.take_profit, 5)))
-
 
     # def setUpLabelconnect(self):
 

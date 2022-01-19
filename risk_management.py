@@ -9,10 +9,10 @@ import pandas as pd
 class risk_management():
 
     
-    def __init__(self, ZMQ_ = None, risk_ratio = None, account_info = None, new_trade_df = None, hist_db_key = None):
+    def __init__(self, ZMQ_ = None, _order = 'SELL', risk_ratio = None, account_info = None, new_trade_df = None, hist_db_key = None):
         
         if risk_ratio is None:
-            risk_ratio = 0.02     # Default value for risk
+            risk_ratio = 0.005     # Default value for risk. 0.5% of the account.
         self.risk_ratio = risk_ratio
         self.risk_amount = None
         if ZMQ_ is None:
@@ -25,6 +25,8 @@ class risk_management():
         self._timeframe = hist_db_key[7:]
 
         self.pip_value = None
+
+        self._order = _order
 
         self.atr_in_pips = None
 
@@ -41,6 +43,8 @@ class risk_management():
         self._symbol_ask = None
 
         self.sl_multiplier = 1.5
+
+        self.tp_multiplier = 1.5
         
         
         
@@ -65,11 +69,11 @@ class risk_management():
         try:
             #Subscribe to market data of _symbol
             self.ZMQ_._DWX_MTX_SUBSCRIBE_MARKETDATA_(self._symbol)
-            time.sleep(0.05)
+            time.sleep(1)
 
             #Request for Current Tracked Prices.
             self.ZMQ_._DWX_MTX_SEND_TRACKPRICES_REQUEST_([self._symbol])
-            time.sleep(2)
+            time.sleep(1)
 
             #Allow time for the values to be loaded onto the Market_DB dict.
 
@@ -96,6 +100,9 @@ class risk_management():
                     sec_symbol_bid, sec_symbol_ask = self.bid_ask_price(self.sec_symbol)
 
                     self.pip_value = (sec_symbol_bid + sec_symbol_ask) / 2
+
+                    self.ZMQ_._DWX_MTX_UNSUBSCRIBE_MARKETDATA_(self.sec_symbol)
+                    #Unsubscribe from marketdata
 
                 else:
                     self.sec_symbol = 'USD' + self._symbol[3:]
@@ -155,44 +162,31 @@ class risk_management():
 
             self.stop_loss = self.calc_SL(atr)
             self.take_profit = self.calc_TP(atr)
-                #To Calculate Pip value, sec_symbol / _symbol.
-                # ie. in AUDCAD, The pip value is calculated using the rate of AUDCAD / AUDUSD
-
-
-                    #A00 Include circumstance for JPY & other unique pairs
-
-
-
-                    #A00 Include circumstance for JPY & other unique pairs
-
-
-
-                # Download the bid/ask price
 
         except Exception as e:
             print(e)
 
     # calculate Stop Loss
     #A00 add functionality depending on whether trade is sell or buy, ie using buy or sell value?
-    def calc_SL(self, atr, sl_multiplier = 1.5, trade_type = 'buy'):
+    def calc_SL(self, atr):
         # SL calculated as 1.5x of ATR
-        if trade_type == 'buy':
-            stop_loss_pips = self._symbol_ask - sl_multiplier * atr
+        if self._order == 'BUY':
+            stop_loss_pips = self._symbol_ask - self.sl_multiplier * atr
 
         else:
-            stop_loss_pips = self._symbol_ask + sl_multiplier * atr
+            stop_loss_pips = self._symbol_bid + self.sl_multiplier * atr
 
         return stop_loss_pips
         
 
     # Calculate Take Profit
-    def calc_TP(self, atr, tp_multiplier = 1.5, trade_type = 'buy'):
+    def calc_TP(self, atr):
 
-        if trade_type == 'buy':
-            take_profit_pips = self._symbol_ask + tp_multiplier * atr
+        if self._order == 'BUY':
+            take_profit_pips = self._symbol_ask + self.tp_multiplier * atr
 
         else:
-            take_profit_pips = self._symbol_ask - tp_multiplier * atr
+            take_profit_pips = self._symbol_bid - self.tp_multiplier * atr
 
         return take_profit_pips
         # TP calculated as 1.5x of ATR
@@ -202,7 +196,7 @@ class risk_management():
     def bid_ask_price(self, _symbol):
 
         self.ZMQ_._DWX_MTX_SUBSCRIBE_MARKETDATA_(_symbol)
-        time.sleep(0.05)
+        time.sleep(1)
         
         self.ZMQ_._DWX_MTX_SEND_TRACKPRICES_REQUEST_([_symbol])
 
@@ -213,7 +207,7 @@ class risk_management():
         _symbol_bid, _symbol_ask = list(self.ZMQ_._Market_Data_DB[_symbol].values())[-1]
 
         self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
-        self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+        time.sleep(0.5)
         self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
 
         return _symbol_bid, _symbol_ask
