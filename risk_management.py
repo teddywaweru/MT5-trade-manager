@@ -44,7 +44,7 @@ class risk_management():
 
         self.sl_multiplier = 1.5
 
-        self.tp_multiplier = 1.5
+        self.tp_multiplier = 1
         
         
         

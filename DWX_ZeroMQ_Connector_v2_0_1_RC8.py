@@ -118,6 +118,12 @@ class DWX_ZeroMQ_Connector():
                                 #               'low': LOW_PRICE, 'close': CLOSE_PRICE, 'tick_volume': TICK_VOLUME, 
                                 #               'spread': SPREAD, 'real_volume': REAL_VOLUME}, ...]}
                                 
+        # Account Information Dictionary
+        self.account_info_DB = {}   #{ACCOUNT_NUMBER:[{'currenttime': 'CURRENT_TIME', 'account_name': 'ACCOUNT_NAME',
+                                        # 'account_balance': ACCOUNT_BALANCE, 'account_equity': ACCOUNT_EQUITY,
+                                        # 'account_profit': ACCOUNT_PROFIT, 'account_free_margin': ACCOUNT_FREE_MARGIN,
+                                        # 'account_leverage': ACCOUNT_LEVERAGE}]}
+
         # Temporary Order STRUCT for convenience wrappers later.
         self.temp_order_dict = self._generate_default_order_dict()
         
@@ -516,6 +522,7 @@ class DWX_ZeroMQ_Connector():
                             
                             try: 
                                 _data = eval(msg)
+                                #Handling of Historical data messages
                                 if '_action' in _data and _data['_action'] == 'HIST':
                                     _symbol = _data['_symbol']
                                     if '_data' in _data.keys():
@@ -526,6 +533,14 @@ class DWX_ZeroMQ_Connector():
                                         print('No data found. MT4 often needs multiple requests when accessing data of symbols without open charts.')
                                         print('message: ' + msg)
                                 
+                                # Handling of Account Information messages
+                                if '_action' in _data and _data['_action'] == 'GET_ACCOUNT_INFORMATION':
+                                    account_number = _data['account_number']
+                                    if '_data' in _data.keys():
+                                        if account_number not in self.account_info_DB.keys():
+                                            self.account_info_DB[account_number] = []   #List to be updated with account details
+                                        self.account_info_DB[account_number] += _data['_data']
+
                                 # invokes data handlers on pull port
                                 for hnd in self._pulldata_handlers:
                                     hnd.onPullData(_data)
