@@ -114,7 +114,7 @@ class DwxModel():
         new_trade = risk_management(self.ZMQ_,
                                         new_trade_dict['_order'],
                                         0.01,
-                                        account_info,
+                                        account_info['_data'][-1],
                                         trade_hist_df,
                                         hist_db_key)
         new_trade.calc_lot()

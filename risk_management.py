@@ -9,7 +9,12 @@ import pandas as pd
 class risk_management():
 
     
-    def __init__(self, ZMQ_ = None, _order = 'SELL', risk_ratio = None, account_info = None, new_trade_df = None, hist_db_key = None):
+    def __init__(self, ZMQ_ = None,
+                _order = 'SELL',
+                risk_ratio = None,
+                account_info = None,
+                new_trade_df = None,
+                hist_db_key = None):
         
         if risk_ratio is None:
             risk_ratio = 0.005     # Default value for risk. 0.5% of the account.
@@ -116,7 +121,7 @@ class risk_management():
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountbalance
-            self.risk_amount = self.account_info['_data']['accountequity'] * self.risk_ratio
+            self.risk_amount = self.account_info['account_equity'] * self.risk_ratio
             print(self.risk_amount)
 
 
@@ -207,7 +212,6 @@ class risk_management():
         _symbol_bid, _symbol_ask = list(self.ZMQ_._Market_Data_DB[_symbol].values())[-1]
 
         self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
-        time.sleep(0.5)
         self.ZMQ_._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
 
         return _symbol_bid, _symbol_ask
