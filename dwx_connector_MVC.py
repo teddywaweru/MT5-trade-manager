@@ -40,7 +40,7 @@ class DwxModel():
         
         _symbol = hist_request.get('_symbol', 'USDJPY')
         #A00 Change timestamp from daily.
-        _timeframe = hist_request.get('_timeframe', 1440)
+        _timeframe = hist_request.get('_timeframe', 15)
         _start = hist_request.get('_start', '2022.01.01 00.00.00')
         _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00'))
         #check whether the item has valid data
@@ -87,7 +87,7 @@ class DwxModel():
     def prepare_new_trade(self, new_trade_dict):
         
         #Dummy Data for testing
-        new_trade_dict['_start'] = '2021.12.01 00.00.00'
+        new_trade_dict['_start'] = '2022.02.01 00.00.00'
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
         
         # Update History_DB. Daily Data selected by default.
