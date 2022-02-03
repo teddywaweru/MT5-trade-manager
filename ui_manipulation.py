@@ -71,7 +71,7 @@ class CallUi(QtWidgets.QMainWindow):
         _order = 'BUY' if self.ui.BUY_SELL_SLIDER.sliderPosition() else 'SELL'
         #Default value of sider is 'SELL' (0)
 
-        _timeframe = 15 
+        _timeframe = 1440 
 
         new_trade_dict = {
             '_symbol': _symbol,

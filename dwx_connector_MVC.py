@@ -87,7 +87,7 @@ class DwxModel():
     def prepare_new_trade(self, new_trade_dict):
         
         #Dummy Data for testing
-        new_trade_dict['_start'] = '2022.02.01 00.00.00'
+        new_trade_dict['_start'] = '2021.12.01 00.00.00'
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
         
         # Update History_DB. Daily Data selected by default.

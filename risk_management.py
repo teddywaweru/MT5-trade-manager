@@ -87,18 +87,23 @@ class risk_management():
             #check whether USD is part of the currency pair ('USD' since this is the account currency)
             if 'USD' in self._symbol:
                 
+                #if USD is the first term in the currency pair ie. USDJPY, USDCAD
                 if 'USD' in self._symbol[:3]:
                     self.pip_value = 1 / ((self._symbol_bid + self._symbol_ask) / 2)
 
+                #ELSE USD is the second term in the currency pair, ie. NZDUSD, AUDUSD...
                 else:
                     self.pip_value = 1
             
+            #if USD is not in the currency pair ie. AUDJPY, EURGBP...
             else:
+                #ADD Can be refracted to form a single function that calculates pip values
 
                 #Check whether _symbol contains one of the major pairs (where USD is the secondary currency.)
-                #If first part of the symbol is a major currency pair ie. AUD, NZD, EUR, GBP...
+                #If secondary symbol is a major currency ie. AUD, NZD, EUR, GBP...
                 if self._symbol[3:] in self.major_curr:
                     
+                    #sec_symbol of the trade combines the major pair & the USD for calculations
                     self.sec_symbol = self._symbol[3:] + 'USD'
 
                     # Collect bid/ask prices from Market_DB
@@ -109,6 +114,7 @@ class risk_management():
                     self.ZMQ_._DWX_MTX_UNSUBSCRIBE_MARKETDATA_(self.sec_symbol)
                     #Unsubscribe from marketdata
 
+                #else secondary currency does not form a major pair with the USD ie. USDCAD, USDJPY...
                 else:
                     self.sec_symbol = 'USD' + self._symbol[3:]
 
@@ -120,7 +126,7 @@ class risk_management():
             #ATR value from dataframe
             atr = self.new_trade_df['atr'].iloc[-1]
 
-            # Calculate risk amount of the accountbalance
+            # Calculate risk amount of the accountequity
             self.risk_amount = self.account_info['account_equity'] * self.risk_ratio
             print(self.risk_amount)
 
