@@ -128,7 +128,6 @@ class risk_management():
 
             # Calculate risk amount of the accountequity
             self.risk_amount = self.account_info['account_equity'] * self.risk_ratio
-            print(self.risk_amount)
 
 
             # Calculate pip value for the trade ie. Pip = %Risk Acct. Amount / Risk Stop Loss

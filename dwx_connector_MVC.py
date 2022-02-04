@@ -40,9 +40,9 @@ class DwxModel():
         
         _symbol = hist_request.get('_symbol', 'USDJPY')
         #A00 Change timestamp from daily.
-        _timeframe = hist_request.get('_timeframe', 15)
-        _start = hist_request.get('_start', '2022.01.01 00.00.00')
-        _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00'))
+        _timeframe = hist_request.get('_timeframe', 1440)           #Default to daily timeframe
+        _start = hist_request.get('_start', '2022.02.034 08:45')
+        _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H:%M'))
         #check whether the item has valid data
         #is pair valid
         # is timeframe int? otherwise show 15 min data. Or other default value?
@@ -72,8 +72,8 @@ class DwxModel():
 
     # Open New Trade
     @Slot()
-    def new_trade(self):
-        self.ZMQ_._DWX_MTX_NEW_TRADE_()
+    def new_trade(self, new_trade_dict, modify_dict):
+        self.ZMQ_._DWX_MTX_NEW_TRADE_(new_trade_dict)
 
     # Get all open trades
     @Slot()
@@ -87,8 +87,8 @@ class DwxModel():
     def prepare_new_trade(self, new_trade_dict):
         
         #Dummy Data for testing
-        new_trade_dict['_start'] = '2021.12.01 00.00.00'
-        new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H.%M.00')
+        new_trade_dict['_start'] = '2022.02.04 07:00:00'
+        new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00')
         
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
@@ -105,15 +105,15 @@ class DwxModel():
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict. For now, this is collected from the thread data output dict.
         self.ZMQ_._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(1)
+        time.sleep(0.05)
         account_info = self.ZMQ_._thread_data_output
 
         #Initiate  Risk Management Class
         # account balance
         # symbol
         new_trade = risk_management(self.ZMQ_,
-                                        new_trade_dict['_order'],
-                                        0.01,
+                                        new_trade_dict['_order'],   #order type
+                                        0.005,                      # Percentage risk of account
                                         account_info['_data'][-1],
                                         trade_hist_df,
                                         hist_db_key)
