@@ -15,8 +15,11 @@ class data_manipulation():
             data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
             
             
-            data_df['atr'] = data_df.ta.atr(length = 14, append = False)
-            
+            data_df['atr'] =  
+            '''
+            dema, ema, fwma, hma, linreg, midpoint, pwma, rma,
+    sinwma, sma, swma, t3, tema, trima, vidya, wma, zlma
+            '''
             self.data_df = data_df
 
         
