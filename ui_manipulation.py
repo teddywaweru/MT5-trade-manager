@@ -209,6 +209,7 @@ class CallUi(QtWidgets.QMainWindow):
     def execute_new_trade(self):
         """[summary]
         """
+        trade_strategy = ''
         #iterate to select the trade strategy that is selected.
         #split the trade, or make a single order
         for i in [
@@ -218,11 +219,19 @@ class CallUi(QtWidgets.QMainWindow):
             if i.isChecked():      
                 trade_strategy = i.text()
 
+        if trade_strategy == '':
+            print('Select a trading strategy.')
+            return
+
+        order_type = {
+            'SELL': 1, 'BUY': 0, 'SELL LIMIT': 2
+        }
+
         try:
             self.dwx_mvc.new_trade(
                 {
                 '_action': 'OPEN',
-                '_type': self.ui.BUY_SELL_SLIDER.sliderPosition(),      #1 for SELL, O for BUY
+                '_type': order_type[self.prep_new_trade._order],      #1 for SELL, O for BUY
                 '_symbol': self.prep_new_trade._symbol,
                 '_price': 0.0,                  #Refers to current price value
                 # SL/TP in POINTS, not pips.
@@ -234,7 +243,8 @@ class CallUi(QtWidgets.QMainWindow):
                 '_ticket': 0
                 },
                 {
-                    '_order': 'full'
+                    'trade_strategy': trade_strategy,
+                    'split_ratio': 0.5
                 }
             )
         except Exception as ex:
