@@ -55,7 +55,7 @@ class DwxModel():
         _symbol = hist_request.get('_symbol', 'USDJPY')
         #A00 Change timestamp from daily.
         _timeframe = hist_request.get('_timeframe', 1440)           #Default to daily timeframe
-        _start = hist_request.get('_start', '2022.02.034 08:45')
+        _start = hist_request.get('_start', '2022.02.08 08:45')
         _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H:%M'))
         #check whether the item has valid data
         #is pair valid
@@ -64,7 +64,7 @@ class DwxModel():
         # No. Should be provided, but automatically selected in the application.
         #end time would always be now.
         self.zmq_dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
-        time.sleep(1)
+        time.sleep(0.05)
 
         #Push collected data to data manipulation
         # to prepare DataFrames that may be utilised at any time
@@ -92,14 +92,45 @@ class DwxModel():
 
     # Open New Trade
     @Slot()
-    def new_trade(self, new_trade_dict, modify_dict):
+    def new_trade(self, new_trade, modif_trade):
         """[summary]
 
         Args:
             new_trade_dict ([type]): [description]
             modify_dict ([type]): [description]
         """
-        self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade_dict)
+        if modif_trade['trade_strategy'] == 'SINGLE TRADE':
+            self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade)
+
+        elif modif_trade['trade_strategy'] == 'SPLIT TRADE':
+            new_trade_1 = new_trade.copy()
+            new_trade_1.update(
+                {'_lots': new_trade['_lots'] * modif_trade['split_ratio']}
+            )
+
+            new_trade_2 = new_trade.copy()
+            new_trade_2.update(
+                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],
+                '_TP': new_trade['_TP'] * 2}
+            )
+
+
+            for i in [
+                new_trade_1, new_trade_2
+            ]:
+                self.zmq_dwx._DWX_MTX_NEW_TRADE_(i)
+                time.sleep(0.5)
+
+        elif modif_trade['trade_strategy'] == 'MINIMAL TRADE':
+            new_trade.update(
+                {
+                    '_lots': new_trade['_lots'] * 0.4,      #Trade @ 40% of the Previous Risk Amount
+                    '_SL': new_trade['_SL'] * 2,            #Update stop Loss. Arbitrarily selected as 2*x
+                    '_TP': new_trade['_TP'] * 2             #Update Tae Profit. Arbitrarily selected as 2*x
+                }
+            )
+
+            self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade)
 
     # Get all open trades
     @Slot()
@@ -116,13 +147,16 @@ class DwxModel():
         """[summary]
 
         Args:
-            new_trade_dict ([type]): [description]
+            new_trade_dict ([Parameters]): [Parameters of a new trade received from the User]
 
         Returns:
-            [type]: [description]
+            [Trade Thresholds]: [Aspects of the new trade received from Risk Mangement Calculations]
         """
         #Dummy Data for testing
-        new_trade_dict['_start'] = '2022.02.04 07:00:00'
+        #Data duration statically selected to be set to be at least 30 data points from current time
+        new_trade_dict['_start'] = (
+            pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 30))).strftime('%Y.%m.%d %H:%M:00')
+
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00')
         
         # Update History_DB. Daily Data selected by default.
@@ -134,12 +168,11 @@ class DwxModel():
         #A00 Change code to work for various timeframes.
         # hist_db_key = self.generate_hist_db_key(_symbol, 1440)
 
-
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict.
         # For now, this is collected from the thread data output dict.
         self.zmq_dwx._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(0.05)
+        time.sleep(0.03)
         account_info = self.zmq_dwx._thread_data_output
 
         #Initiate  Risk Management Class
@@ -167,6 +200,7 @@ class DwxModel():
         """
         hist_db_key = '' + _symbol + '_' + str(self.periods[_timeframe])
         return hist_db_key
+
 
         #A00 Clear historical DB
 

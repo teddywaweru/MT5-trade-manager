@@ -22,7 +22,7 @@ class RiskManagement():
                 hist_db_key = None):
 
         if risk_ratio is None:
-            risk_ratio = 0.005     # Default value for risk. 0.5% of the account.
+            risk_ratio = 0.01   # Default value for risk. 0.5% of the account.
         self.risk_ratio = risk_ratio
         self.risk_amount = None
         if zmq_dwx is None:
@@ -52,9 +52,9 @@ class RiskManagement():
 
         self._symbol_ask = None
 
-        self.sl_multiplier = 1.5
+        self.sl_multiplier = 2
 
-        self.tp_multiplier = 1
+        self.tp_multiplier = 1.5
 
 
         self.sec_symbol = None
@@ -78,14 +78,7 @@ class RiskManagement():
         """
 
         try:
-            #Subscribe to market data of _symbol
-            self.zmq_dwx._DWX_MTX_SUBSCRIBE_MARKETDATA_(self._symbol)
-            time.sleep(1)
-
-            #Request for Current Tracked Prices.
-            self.zmq_dwx._DWX_MTX_SEND_TRACKPRICES_REQUEST_([self._symbol])
-            time.sleep(1)
-
+            
             #Allow time for the values to be loaded onto the Market_DB dict.
 
             self._symbol_bid, self._symbol_ask = self.bid_ask_price(self._symbol)
@@ -118,9 +111,6 @@ class RiskManagement():
 
                     self.pip_value = (sec_symbol_bid + sec_symbol_ask) / 2
 
-                    self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_MARKETDATA_(self.sec_symbol)
-                    #Unsubscribe from marketdata
-
                 #else secondary currency does not form a major pair with the USD
                 # ie. USDCAD, USDJPY...
                 else:
@@ -135,7 +125,7 @@ class RiskManagement():
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountequity
-            self.risk_amount = self.account_info['account_equity'] * self.risk_ratio
+            self.risk_amount = self.account_info['account_equity'] * self.risk_ratio / 4
 
 
             # Calculate pip value for the trade
@@ -233,25 +223,32 @@ class RiskManagement():
         """[summary]
 
         Args:
-            _symbol ([type]): [description]
+            _symbol (INSTRUMENT): [Instrument to request bid/ask]
 
         Returns:
-            [type]: [description]
+            [bid & ask price]: [Instant bid as prices for the instrument]
         """
 
-        self.zmq_dwx._DWX_MTX_SUBSCRIBE_MARKETDATA_(_symbol)
-        time.sleep(1)
+        #USING SUBSCRIPTION REQUESTS
+        # self.zmq_dwx._DWX_MTX_SUBSCRIBE_MARKETDATA_(_symbol)
+        # time.sleep(1)
 
-        self.zmq_dwx._DWX_MTX_SEND_TRACKPRICES_REQUEST_([_symbol])
+        # self.zmq_dwx._DWX_MTX_SEND_TRACKPRICES_REQUEST_([_symbol])
 
-        #Pause to allow Market DB to be updated with recent values
-        time.sleep(1)
+        # #Pause to allow Market DB to be updated with recent values
+        # time.sleep(1)
 
-        # Get last item in the dict for the symbol
-        _symbol_bid, _symbol_ask = list(self.zmq_dwx._Market_Data_DB[_symbol].values())[-1]
+        # # Get last item in the dict for the symbol
+        # _symbol_bid, _symbol_ask = list(self.zmq_dwx._Market_Data_DB[_symbol].values())[-1]
 
-        self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
-        self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+        # self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+        # self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+
+        #USING INSTANT RATES REQUESTS
+        self.zmq_dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
+        time.sleep(0.05)
+
+        _symbol_bid, _symbol_ask = [self.zmq_dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
 
         return _symbol_bid, _symbol_ask
 

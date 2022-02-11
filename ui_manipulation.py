@@ -31,6 +31,21 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.prep_new_trade = None
 
+        self.order_btns = [
+            self.ui.SELL_BTN, self.ui.SELL_LMT_BTN,
+            self.ui.BUY_BTN, self.ui.BUY_LMT_BTN
+        ]
+
+        self.order_strategy_btns = [
+            self.ui.SPLIT_TRADE_BTN, self.ui.SINGLE_TRADE_BTN, self.ui.MINIMAL_TRADE_BTN
+        ]
+
+        self.order_timeframe_btns = [
+            self.ui.MIN_1440_BTN, self.ui.MIN_15_BTN, self.ui.MIN_60_BTN
+        ]
+
+
+
 
         #ADD textlabel function to be loaded, similar to setupBtnconnect
         # also for text edits,
@@ -64,10 +79,7 @@ class CallUi(QtWidgets.QMainWindow):
             order_btn (QButton Object): The button that has been checked.
             Options are: SELL, BUY, SELL LIMIT, BUY LIMIT, SELL STOP, BUY STOP
         """               
-        for i in [
-            self.ui.SELL_BTN, self.ui.SELL_LMT_BTN,
-            self.ui.BUY_BTN, self.ui.BUY_LMT_BTN
-        ]:
+        for i in self.order_btns:
             if i != order_btn:
                 if i.isChecked():
                     i.setChecked(False)
@@ -99,10 +111,8 @@ class CallUi(QtWidgets.QMainWindow):
         Args:
             order_strategy (QButton Object): The button that has been checked.
             Options are: single Order Trade, or Split Order Trade
-        """        
-        for i in [
-            self.ui.SPLIT_TRADE_BTN, self.ui.SINGLE_TRADE_BTN
-        ]:
+        """
+        for i in self.order_strategy_btns:
             if i != order_strategy:
                 i.setChecked(False)
                 i.setStyleSheet('')
@@ -114,8 +124,26 @@ class CallUi(QtWidgets.QMainWindow):
                             'border-color: beige;'
                             )
         else: order_strategy.setStyleSheet('')
-    
-            
+
+    def order_timeframe_btn_clicked(self, order_timeframe):
+        """[summary]
+
+        Args:
+            order_timeframe ([type]): [description]
+        """        
+        for i in self.order_timeframe_btns:
+            if i != order_timeframe:
+                if i.isChecked():
+                    i.setChecked(False)
+                    i.setStyleSheet('')
+
+            if order_timeframe.isChecked():
+                order_timeframe.setStyleSheet('background-color: #A3D;'
+                            'border-style: outset;'
+                            'border-width: 2px;'
+                            'border-color: beige;'
+                            )
+            else: order_timeframe.setStyleSheet('')
 
 
     def setup_btn_connect(self):
@@ -149,6 +177,23 @@ class CallUi(QtWidgets.QMainWindow):
         
         self.ui.SINGLE_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.SINGLE_TRADE_BTN))
+
+        self.ui.MINIMAL_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN)
+        )
+
+        self.ui.MIN_15_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_15_BTN)
+        )
+
+        self.ui.MIN_1440_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1440_BTN)
+        )
+
+        self.ui.MIN_60_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
+        )
+
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
 
@@ -168,12 +213,7 @@ class CallUi(QtWidgets.QMainWindow):
         _order = ''
         #Iterate through the order types to find the selected one
         #Do nothing if none is selected
-        for i in [
-            self.ui.SELL_BTN,
-            self.ui.SELL_LMT_BTN,
-            self.ui.BUY_BTN,
-            self.ui.BUY_LMT_BTN
-                ]:
+        for i in self.order_btns:
             if i.isChecked():
                 _order = i.text()
         
@@ -181,8 +221,16 @@ class CallUi(QtWidgets.QMainWindow):
             print('Select an order type.')
             return
 
+        #Iterate through the order timeframes to find the selected one
+        #Do nothing if none is selected
+        for i in self.order_timeframe_btns:
+            if i.isChecked():
+                _timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
+        
+        if _timeframe == '':
+            print('Select an order Timeframe.')
+            return
 
-        _timeframe = 15
 
         new_trade_dict = {
             '_symbol': _symbol,
@@ -212,11 +260,8 @@ class CallUi(QtWidgets.QMainWindow):
         trade_strategy = ''
         #iterate to select the trade strategy that is selected.
         #split the trade, or make a single order
-        for i in [
-            self.ui.SINGLE_TRADE_BTN,
-            self.ui.SPLIT_TRADE_BTN
-        ]:
-            if i.isChecked():      
+        for i in self.order_strategy_btns:
+            if i.isChecked():  
                 trade_strategy = i.text()
 
         if trade_strategy == '':
@@ -259,5 +304,6 @@ def setup_window():
     """
     app = QtWidgets.QApplication(sys.argv)
     now_window = CallUi()
+    now_window.order_strategy_btn_clicked(order_strategy)
     now_window.show()
     sys.exit(app.exec_())

@@ -124,6 +124,10 @@ class DWX_ZeroMQ_Connector():
                                         # 'account_profit': ACCOUNT_PROFIT, 'account_free_margin': ACCOUNT_FREE_MARGIN,
                                         # 'account_leverage': ACCOUNT_LEVERAGE}]}
 
+        # Instant Bid Ask Rates
+        self.instant_rates_DB = {}    #{_symbol:[{'current_time': CURRENT TIME,
+                                        # '_bid': BID_PRICE, '_ask':ASK_PRICE}]}
+
         # Temporary Order STRUCT for convenience wrappers later.
         self.temp_order_dict = self._generate_default_order_dict()
         
@@ -540,6 +544,14 @@ class DWX_ZeroMQ_Connector():
                                         if account_number not in self.account_info_DB.keys():
                                             self.account_info_DB[account_number] = []   #List to be updated with account details
                                         self.account_info_DB[account_number] += _data['_data']
+                                
+                                # Handling of Instant Bid/Ask Rates messages
+                                if '_action' in _data and _data['_action'] == 'GET_CURRENT_RATE':
+                                    _symbol = _data['_symbol']
+                                    if '_data' in _data.keys():
+                                        if _symbol not in self.instant_rates_DB.keys():
+                                            self.instant_rates_DB[_symbol] = []   #List to be updated with Instant rates & time
+                                        self.instant_rates_DB[_symbol] += _data['_data']
 
                                 # invokes data handlers on pull port
                                 for hnd in self._pulldata_handlers:
@@ -725,6 +737,24 @@ class DWX_ZeroMQ_Connector():
             print(_msg)
         
     ##########################################################################
+
+    # GET CURRENT BID & ASK PRICES OF INSTRUMENT
+    def _DWX_MTX_GET_INSTANT_RATES_(self, _symbol):
+
+        try:
+            self.temp_order_dict['_action'] = 'INSTANT_RATE'
+            self.temp_order_dict['_symbol'] = _symbol
+
+
+            #Execute
+            self._DWX_MTX_SEND_COMMAND_(**self.temp_order_dict)
+
+        except Exception as ex:
+            _exstr = "Exception Type {0}. Args:\n{1!r}"
+            _msg = _exstr.format(type(ex).__name__, ex.args)
+            print(_msg)
+
+
 
 ##############################################################################
 
