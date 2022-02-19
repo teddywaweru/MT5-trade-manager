@@ -204,7 +204,6 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Check if the text entered is a valid currency pair that
         # can be operated on ie. existing pairs on the list.
-        #Else default value is EURUSD
         _symbol = self.ui.CURRENCY_PAIRS_COMBOBOX.currentText()
         if _symbol not in [self.ui.CURRENCY_PAIRS_COMBOBOX.itemText(i) for i in range(self.ui.CURRENCY_PAIRS_COMBOBOX.count())]:
             print('Select a Currency Pair')
@@ -223,6 +222,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Iterate through the order timeframes to find the selected one
         #Do nothing if none is selected
+        _timeframe = ''
         for i in self.order_timeframe_btns:
             if i.isChecked():
                 _timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
@@ -261,7 +261,7 @@ class CallUi(QtWidgets.QMainWindow):
         #iterate to select the trade strategy that is selected.
         #split the trade, or make a single order
         for i in self.order_strategy_btns:
-            if i.isChecked():  
+            if i.isChecked(): 
                 trade_strategy = i.text()
 
         if trade_strategy == '':
@@ -289,7 +289,7 @@ class CallUi(QtWidgets.QMainWindow):
                 },
                 {
                     'trade_strategy': trade_strategy,
-                    'split_ratio': 0.5
+                    'split_ratio': 0.8
                 }
             )
         except Exception as ex:
@@ -304,6 +304,5 @@ def setup_window():
     """
     app = QtWidgets.QApplication(sys.argv)
     now_window = CallUi()
-    now_window.order_strategy_btn_clicked(order_strategy)
     now_window.show()
     sys.exit(app.exec_())

@@ -22,7 +22,7 @@ class RiskManagement():
                 hist_db_key = None):
 
         if risk_ratio is None:
-            risk_ratio = 0.01   # Default value for risk. 0.5% of the account.
+            risk_ratio = 0.01   # Default value for risk. 1% of the account.
         self.risk_ratio = risk_ratio
         self.risk_amount = None
         if zmq_dwx is None:
@@ -52,9 +52,9 @@ class RiskManagement():
 
         self._symbol_ask = None
 
-        self.sl_multiplier = 2
+        self.sl_multiplier = 1.5
 
-        self.tp_multiplier = 1.5
+        self.tp_multiplier = 2
 
 
         self.sec_symbol = None
@@ -125,7 +125,7 @@ class RiskManagement():
             atr = self.new_trade_df['atr'].iloc[-1]
 
             # Calculate risk amount of the accountequity
-            self.risk_amount = self.account_info['account_equity'] * self.risk_ratio / 4
+            self.risk_amount = self.account_info['account_equity'] * self.risk_ratio
 
 
             # Calculate pip value for the trade
@@ -159,7 +159,7 @@ class RiskManagement():
                     self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01
 
                 elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR':
-                    self.atr_in_pips = atr * 1000
+                    self.atr_in_pips = atr * 10000
 
                     # Calculate the Pip Value based on the new trade to be taken, ie.
                     # Relating the risked amount (%Risk) to the risked pips

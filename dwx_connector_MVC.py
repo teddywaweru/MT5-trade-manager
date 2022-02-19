@@ -99,19 +99,23 @@ class DwxModel():
             new_trade_dict ([type]): [description]
             modify_dict ([type]): [description]
         """
+        #A00 move calculations of SL & TP to risk_management.py
+        
         if modif_trade['trade_strategy'] == 'SINGLE TRADE':
             self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade)
 
         elif modif_trade['trade_strategy'] == 'SPLIT TRADE':
-            new_trade_1 = new_trade.copy()
+            new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1.update(
-                {'_lots': new_trade['_lots'] * modif_trade['split_ratio']}
+                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],
+                '_TP': new_trade['_TP'] * 0.5}
+                
             )
 
-            new_trade_2 = new_trade.copy()
+            new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2.update(
-                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],
-                '_TP': new_trade['_TP'] * 2}
+                {'_lots': new_trade['_lots'] - new_trade_1['_lots'],
+                '_SL': new_trade['_SL'] * 2}
             )
 
 
@@ -119,14 +123,12 @@ class DwxModel():
                 new_trade_1, new_trade_2
             ]:
                 self.zmq_dwx._DWX_MTX_NEW_TRADE_(i)
-                time.sleep(0.5)
+                time.sleep(0.1)
 
         elif modif_trade['trade_strategy'] == 'MINIMAL TRADE':
             new_trade.update(
                 {
-                    '_lots': new_trade['_lots'] * 0.4,      #Trade @ 40% of the Previous Risk Amount
-                    '_SL': new_trade['_SL'] * 2,            #Update stop Loss. Arbitrarily selected as 2*x
-                    '_TP': new_trade['_TP'] * 2             #Update Tae Profit. Arbitrarily selected as 2*x
+                    '_lots': new_trade['_lots'] * 0.2     #Trade @ 40% of the Previous Risk Amount
                 }
             )
 
