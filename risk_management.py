@@ -22,7 +22,7 @@ class RiskManagement():
                 hist_db_key = None):
 
         if risk_ratio is None:
-            risk_ratio = 0.01   # Default value for risk. 1% of the account.
+            risk_ratio = 0.02   # Default value for risk. 1% of the account.
         self.risk_ratio = risk_ratio
         self.risk_amount = None
         if zmq_dwx is None:
@@ -61,11 +61,11 @@ class RiskManagement():
 
         #Major Currency pairs, where USD is the secondary currency traded.
         #ADD commodities ie XAG, XPT, XAU
-        self.major_curr = ['AUD', 'EUR', 'GBP', 'NZD', 'XAU', 'XAG', 'XPT']
+        self.major_curr = ['AUD', 'EUR', 'GBP', 'NZD',  'XAG', 'XPT']
 
         # Exotic pairs whose values do not conform to typical 5 point values ie. SEK, JPY
         #ADD all necessary pairs to be considered
-        self.exotic_curr = ['SEK', 'JPY', 'ZAR',]
+        self.exotic_curr = ['SEK', 'JPY', 'ZAR','XAU',]
 
 
 
@@ -142,6 +142,7 @@ class RiskManagement():
                 #To get the lot size, divide the current pip value of the
                 # _symbol by the calculated pip value of the new trade
                 # self.lot_size = self.calc_pip_value / self.pip_value
+                # 0.1 refers to the lot size for a self.pip_value
                 self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
 
             # Functionality for exotic pairs whose atr_in_pips may vary from the major pairs
@@ -166,10 +167,24 @@ class RiskManagement():
                     # (factor * ATR_in_pips)
                     self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
+                    #To get the lot size, divide the current pip value of the _symbol
+                    # by the calculated pip value of the new trade
+                    self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
+
+                    #Calculation for XAU
+                elif self._symbol[:3] == 'XAU':
+
+                    self.atr_in_pips = atr * 10
+
+                    # Calculate the Pip Value based on the new trade to be taken, ie.
+                    # Relating the risked amount (%Risk) to the risked pips
+                    # (factor * ATR_in_pips)
+                    self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
                     #To get the lot size, divide the current pip value of the _symbol
                     # by the calculated pip value of the new trade
-                    self.lot_size = self.calc_pip_value / self.pip_value
+                    self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
+
 
             self.stop_loss = self.calc_stop_loss(atr)
             self.take_profit = self.calc_take_profit(atr)
@@ -246,7 +261,7 @@ class RiskManagement():
 
         #USING INSTANT RATES REQUESTS
         self.zmq_dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
-        time.sleep(0.05)
+        time.sleep(0.5)
 
         _symbol_bid, _symbol_ask = [self.zmq_dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
 

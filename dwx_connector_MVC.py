@@ -174,7 +174,7 @@ class DwxModel():
         #A00 Code may change when account info is stored in its own dict.
         # For now, this is collected from the thread data output dict.
         self.zmq_dwx._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(0.03)
+        time.sleep(0.3)
         account_info = self.zmq_dwx._thread_data_output
 
         #Initiate  Risk Management Class
@@ -182,7 +182,7 @@ class DwxModel():
         # symbol
         new_trade = RiskManagement(self.zmq_dwx,
                                         new_trade_dict['_order'],   #order type
-                                        0.005,                      # Percentage risk of account
+                                        0.02,                      # Percentage risk of account
                                         account_info['_data'][-1],
                                         trade_hist_df,
                                         hist_db_key)
