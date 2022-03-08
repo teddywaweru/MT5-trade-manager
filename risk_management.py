@@ -65,7 +65,7 @@ class RiskManagement():
 
         # Exotic pairs whose values do not conform to typical 5 point values ie. SEK, JPY
         #ADD all necessary pairs to be considered
-        self.exotic_curr = ['SEK', 'JPY', 'ZAR','XAU',]
+        self.exotic_curr = ['SEK', 'JPY', 'ZAR',]
 
 
 
@@ -130,60 +130,95 @@ class RiskManagement():
 
             # Calculate pip value for the trade
             # ie. Pip = %Risk Acct. Amount / Risk Stop Loss
-            if self._symbol[:3] not in self.exotic_curr and self._symbol[3:] not in self.exotic_curr:
 
-                self.atr_in_pips = atr * 10000
+            self.atr_in_pips = atr * 10 if self._symbol[:3] in \
+                                ['XAU', 'XPD', 'XPT'] \
+                        else atr * 100 if self._symbol[:3] in \
+                            ['XAG'] \
+                                or self._symbol[3:] in \
+                                    ['JPY'] \
+                        else atr * 1000 if self._symbol[:3] in \
+                            ['SEK',] \
+                        else atr * 10000 if self._symbol[:3] in \
+                            ['AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NZD', 'SGD', 'USD'] \
+                        else None
 
-                # Calculate the Pip Value based on the new trade to be taken, ie.
-                # Relating the risked amount (%Risk) to the risked pips
-                # (stoplossMultiplier * ATR_in_pips)
-                self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+            # Calculate the Pip Value based on the new trade to be taken, ie.
+            # Relating the risked amount (%Risk) to the risked pips
+            # (stoplossMultiplier * ATR_in_pips)
+            self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
-                #To get the lot size, divide the current pip value of the
-                # _symbol by the calculated pip value of the new trade
-                # self.lot_size = self.calc_pip_value / self.pip_value
-                # 0.1 refers to the lot size for a self.pip_value
-                self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
 
-            # Functionality for exotic pairs whose atr_in_pips may vary from the major pairs
-            #a00 functionality for indices
-            else:
-                if self._symbol[3:] == 'JPY':
-                    self.atr_in_pips = atr * 100
+            #To get the lot size, divide the current pip value of the
+            # _symbol by the calculated pip value of the new trade
+            # self.lot_size = self.calc_pip_value / self.pip_value
+            # 0.1 refers to the lot size for a self.pip_value
+            self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01 if \
+                            self._symbol[3:] in ['JPY'] \
+                        else 0.1 * self.calc_pip_value / self.pip_value if \
+                            self._symbol[:3] in \
+                            ['XAU', 'XAG', 'XPD', 'XPT', \
+                            'AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NZD', 'SGD', 'USD'] \
+                        else None
 
-                    # Calculate the Pip Value based on the new trade to be taken, ie.
-                    # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips)
-                    self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+            # Calculate pip value for the trade
+            # ie. Pip = %Risk Acct. Amount / Risk Stop Loss
+            # if self._symbol[:3] not in self.exotic_curr and self._symbol[3:] not in self.exotic_curr:
 
-                    #To get the lot size, divide the current pip value of the
-                    # _symbol by the calculated pip value of the new trade
-                    self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01
+            #     # self.atr_in_pips = self.calc_atr_pip_lot(pair_type = 'comm_pair')
+            #     # self.atr_in_pips = atr * 10000
 
-                elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR':
-                    self.atr_in_pips = atr * 10000
+            #     # Calculate the Pip Value based on the new trade to be taken, ie.
+            #     # Relating the risked amount (%Risk) to the risked pips
+            #     # (stoplossMultiplier * ATR_in_pips)
+            #     self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
-                    # Calculate the Pip Value based on the new trade to be taken, ie.
-                    # Relating the risked amount (%Risk) to the risked pips
-                    # (factor * ATR_in_pips)
-                    self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+            #     #To get the lot size, divide the current pip value of the
+            #     # _symbol by the calculated pip value of the new trade
+            #     # self.lot_size = self.calc_pip_value / self.pip_value
+            #     # 0.1 refers to the lot size for a self.pip_value
+            #     self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
 
-                    #To get the lot size, divide the current pip value of the _symbol
-                    # by the calculated pip value of the new trade
-                    self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
+            # # Functionality for exotic pairs whose atr_in_pips may vary from the major pairs
+            # #a00 functionality for indices
+            # else:
+            #     if self._symbol[3:] == 'JPY':
+            #         self.atr_in_pips = atr * 100
 
-                    #Calculation for XAU
-                elif self._symbol[:3] == 'XAU':
+            #         # Calculate the Pip Value based on the new trade to be taken, ie.
+            #         # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips)
+            #         self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
-                    self.atr_in_pips = atr * 10
+            #         #To get the lot size, divide the current pip value of the
+            #         # _symbol by the calculated pip value of the new trade
+            #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01
 
-                    # Calculate the Pip Value based on the new trade to be taken, ie.
-                    # Relating the risked amount (%Risk) to the risked pips
-                    # (factor * ATR_in_pips)
-                    self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+            #     elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR':
+            #         self.atr_in_pips = atr * 10000
 
-                    #To get the lot size, divide the current pip value of the _symbol
-                    # by the calculated pip value of the new trade
-                    self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
+            #         # Calculate the Pip Value based on the new trade to be taken, ie.
+            #         # Relating the risked amount (%Risk) to the risked pips
+            #         # (factor * ATR_in_pips)
+            #         self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+
+            #         #To get the lot size, divide the current pip value of the _symbol
+            #         # by the calculated pip value of the new trade
+            #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
+
+            #         #Calculation for XAU
+            #     elif self._symbol[:3] == 'XAU':
+
+            #         self.atr_in_pips = self.calc_atr_pip_lot(pair_type = 'XAU')
+            #         self.atr_in_pips = atr * 10
+
+            #         # Calculate the Pip Value based on the new trade to be taken, ie.
+            #         # Relating the risked amount (%Risk) to the risked pips
+            #         # (factor * ATR_in_pips)
+            #         self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+
+            #         #To get the lot size, divide the current pip value of the _symbol
+            #         # by the calculated pip value of the new trade
+            #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
 
 
             self.stop_loss = self.calc_stop_loss(atr)
@@ -191,6 +226,7 @@ class RiskManagement():
 
         except Exception as ex:
             print(ex)
+
 
     # calculate Stop Loss
     #A00 add functionality depending on whether trade is sell or buy, ie using buy or sell value?
@@ -261,7 +297,7 @@ class RiskManagement():
 
         #USING INSTANT RATES REQUESTS
         self.zmq_dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
-        time.sleep(0.5)
+        time.sleep(0.05)
 
         _symbol_bid, _symbol_ask = [self.zmq_dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
 

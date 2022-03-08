@@ -24,6 +24,27 @@ class DwxModel():
                 1: 'M1', 5 : 'M5', 15 : 'M15', 30 : 'M30', 60 : 'H1',
                 240 : 'H4', 1440 : 'D1', 10080 : 'W1'
             }
+        self.curr_mtl_pairs = (
+                            'AUDCAD', 'AUDCHF','AUDJPY', 'AUDNZD', 'AUDSGD','AUDUSD',
+                            'CADCHF','CADJPY',
+                            'CHFJPY','CHFSGD',
+                            'EURAUD','EURCAD','EURCHF', 'EURGBP', 'EURJPY',\
+                                'EURNZD', 'EURSGD', 'EURUSD',
+                            'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD',\
+                                'GBPSGD', 'GBPUSD',
+                            'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD',
+                            'SGDJPY',
+                            'USDCAD', 'USDCHF', 'USDCNH', 'USDSGD', 'USDJPY', 'USDZAR',
+                            'XAGUSD', 'XAUUSD'
+                            )
+
+        self.comm_indcs = (
+                        'AUS200', 'CHINAH', 'CN50', 'FRA40', 'HK50', 'NAS100',
+                        'GER40', 'GERTEC30', 'NETH25', 'SCI25', 'SPA35','UK100',
+                        'US30', 'US500', 'US2000', 'USDX',
+                        'SpotCrude', 'Cattle', 'Cotton', 'Copper', 'OrangeJuice',
+                        'Soybeans', 'SpotBrent'
+                        )
 
 
 
@@ -160,6 +181,10 @@ class DwxModel():
             pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 30))).strftime('%Y.%m.%d %H:%M:00')
 
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00')
+
+        new_trade_dict['instr_type'] = 'curr_mtl' if new_trade_dict['_symbol'] in self.curr_mtl_pairs\
+                                    else 'comm_indcs' if new_trade_dict['_symbol'] in self.comm_indcs\
+                                    else 'o'
         
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
