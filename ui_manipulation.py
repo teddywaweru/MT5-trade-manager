@@ -7,7 +7,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Slot, Qt
 from UI_templates import main_window as main_window
 # from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
-from dwx_connector_mvc import DwxModel
+from dwx_connector_MVC import DwxModel
 from table_MVC import TableModel
 import pandas as pd
 
