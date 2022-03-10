@@ -64,7 +64,7 @@ class RiskManagement():
 
         self._symbol_ask = None
 
-        self.sl_multiplier = 1
+        self.sl_multiplier = 1.5
 
         self.tp_multiplier = 1
 
@@ -332,11 +332,11 @@ class RiskManagement():
                                         ['Cattle'] \
                                     else None
 
-                # calculate the pip value based on the trade to be taken
-                self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
+                # # calculate the pip value based on the trade to be taken
+                # self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
-                # #For testing purposes, Risk amount == 500
-                # self.calc_pip_value = 500 / (self.atr_in_pips * self.sl_multiplier)
+                #For testing purposes, Risk amount == 500
+                self.calc_pip_value = 50 / (self.atr_in_pips * self.sl_multiplier)
 
                 # calculate lot size
                 self.lot_size = round(self.calc_pip_value / self.pip_value, 0)

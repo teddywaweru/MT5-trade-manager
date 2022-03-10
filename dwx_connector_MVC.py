@@ -128,15 +128,14 @@ class DwxModel():
         elif modif_trade['trade_strategy'] == 'SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1.update(
-                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],
-                '_TP': new_trade['_TP'] * 0.5}
+                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],}
                 
             )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2.update(
                 {'_lots': new_trade['_lots'] - new_trade_1['_lots'],
-                '_SL': new_trade['_SL'] * 2}
+                '_TP': new_trade['_TP'] * 2}
             )
 
 
@@ -208,7 +207,7 @@ class DwxModel():
         new_trade = RiskManagement(self.zmq_dwx,
                                         new_trade_dict['_order'],   #order type
                                         new_trade_dict['instr_type'],
-                                        0.01,                      # Percentage risk of account
+                                        0.02,                      # Percentage risk of account
                                         account_info['_data'][-1],
                                         trade_hist_df,
                                         hist_db_key)
