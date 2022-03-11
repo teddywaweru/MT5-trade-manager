@@ -33,6 +33,7 @@ class DwxModel():
                             'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD',\
                                 'GBPSGD', 'GBPUSD',
                             'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD',
+                            'SEKJPY',
                             'SGDJPY',
                             'USDCAD', 'USDCHF', 'USDCNH', 'USDSGD', 'USDJPY', 'USDZAR',
                             'XAGUSD', 'XAUUSD'
