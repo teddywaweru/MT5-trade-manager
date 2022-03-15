@@ -16,14 +16,13 @@ class RiskManagement():
     """[summary]
     """
     def __init__(self, zmq_dwx = None,
-                _order = None,
-                instr_type = None,
+                new_trade_dict = None,
                 risk_ratio = None,
                 account_info = None,
                 new_trade_df = None,
                 hist_db_key = None):
 
-        self.instr_type = instr_type    #Instrument to be traded (metals, FX, commodities, Index)
+        self.new_trade_dict = new_trade_dict    #Dict containing the new trade's details
 
         if risk_ratio is None:
             risk_ratio = 0.02   # Default value for risk. 1% of the account.
@@ -42,13 +41,11 @@ class RiskManagement():
 
         self.hist_db_key = hist_db_key#instrument key reference ie EURUSD_D1
 
-        self._symbol = hist_db_key.partition('_')[0]
+        self._symbol = hist_db_key.partition('_')[0]    #Partitioning the symbol EURUSD_D1 to obtain instrument symbol
 
-        self._timeframe = hist_db_key.partition('_')[2]
+        self._timeframe = hist_db_key.partition('_')[2] #Partitioning the symbol EURUSD_D1 to obtain timeframe
 
         self.pip_value = None
-
-        self._order = _order
 
         self.atr_in_pips = None
 
@@ -90,7 +87,7 @@ class RiskManagement():
         """
 
         # Calculations for metal & FX pairs
-        if self.instr_type == 'curr_mtl':
+        if self.new_trade_dict['instr_type'] == 'curr_mtl':
             try:
                 
                 #Get bid & ask prices of the _symbol
@@ -235,8 +232,7 @@ class RiskManagement():
                 #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
 
 
-                self.stop_loss = self.calc_stop_loss(atr)
-                self.take_profit = self.calc_take_profit(atr)
+                self.stop_loss, self.take_profit = self.calc_sl_tp(atr)
 
             except Exception as ex:
                 print(ex)
@@ -342,8 +338,7 @@ class RiskManagement():
                 self.lot_size = self.calc_pip_value / self.pip_value
 
                 # Calculate SL & TP
-                self.stop_loss = self.calc_stop_loss(atr)
-                self.take_profit = self.calc_take_profit(atr)
+                self.stop_loss, self.take_profit = self.calc_sl_tp(atr)
                 
             except Exception as ex:
                 print(ex)
@@ -351,26 +346,7 @@ class RiskManagement():
 
     # calculate Stop Loss
     #A00 add functionality depending on whether trade is sell or buy, ie using buy or sell value?
-    def calc_stop_loss(self, atr):
-        """[summary]
-
-        Args:
-            atr ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """
-        # SL calculated as 1.5x of ATR
-        if self._order == 'BUY':
-            stop_loss_pips = self._symbol_ask - self.sl_multiplier * atr
-
-        else:
-            stop_loss_pips = self._symbol_bid + self.sl_multiplier * atr
-
-        return stop_loss_pips
-
-    # Calculate Take Profit
-    def calc_take_profit(self, atr):
+    def calc_sl_tp(self, atr):
         """[summary]
 
         Args:
@@ -380,14 +356,40 @@ class RiskManagement():
             [type]: [description]
         """
 
-        if self._order == 'BUY':
-            take_profit_pips = self._symbol_ask + self.tp_multiplier * atr
+        def buy_order():
+            sl_pips = self._symbol_ask - self.sl_multiplier * atr
+            tp_pips = self._symbol_ask + self.tp_multiplier * atr
 
-        else:
-            take_profit_pips = self._symbol_bid - self.tp_multiplier * atr
+            return sl_pips, tp_pips
 
-        return take_profit_pips
-        # TP calculated as 1.5x of ATR
+        def sell_order():
+            sl_pips = self._symbol_bid + self.sl_multiplier * atr
+            tp_pips = self._symbol_bid - self.tp_multiplier * atr
+
+            return sl_pips, tp_pips
+
+        def buy_limit_order():
+            sl_pips = self.new_trade_dict['buy_sell_limit'] - self.sl_multiplier * atr
+            tp_pips = self.new_trade_dict['buy_sell_limit'] + self.tp_multiplier * atr   
+            
+            return sl_pips, tp_pips
+
+        def sell_limit_order():
+            sl_pips = self.new_trade_dict['buy_sell_limit'] + self.sl_multiplier * atr
+            tp_pips = self.new_trade_dict['buy_sell_limit'] - self.tp_multiplier * atr
+            
+            return sl_pips, tp_pips
+
+        order_type = {
+            'BUY': buy_order,
+            'SELL': sell_order,
+            'BUY LIMIT': buy_limit_order,
+            'SELL LIMIT': sell_limit_order
+        }
+        sl_pips, tp_pips = order_type.get(self.new_trade_dict['_order'])()
+
+
+        return sl_pips, tp_pips
 
 
     # Collect bid & ask prices of specific symbol after downloading current rates

@@ -86,7 +86,7 @@ class DwxModel():
         # No. Should be provided, but automatically selected in the application.
         #end time would always be now.
         self.zmq_dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
-        time.sleep(0.05)
+        time.sleep(0.1)
 
         #Push collected data to data manipulation
         # to prepare DataFrames that may be utilised at any time
@@ -126,7 +126,7 @@ class DwxModel():
         if modif_trade['trade_strategy'] == 'SINGLE TRADE':
             self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade)
 
-        elif modif_trade['trade_strategy'] == 'SPLIT TRADE':
+        elif modif_trade['trade_strategy'] == '2-WAY SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1.update(
                 {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],}
@@ -136,12 +136,43 @@ class DwxModel():
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2.update(
                 {'_lots': new_trade['_lots'] - new_trade_1['_lots'],
-                '_TP': new_trade['_TP'] * 2}
+                '_TP': new_trade['_TP'] * 5}
             )
 
 
             for i in [
                 new_trade_1, new_trade_2
+            ]:
+                self.zmq_dwx._DWX_MTX_NEW_TRADE_(i)
+                time.sleep(0.1)
+
+
+        elif modif_trade['trade_strategy'] == '3-WAY SPLIT TRADE':
+            new_trade_1 = new_trade.copy()                      #Larger Proportional Trade (0.8)
+            new_trade_1.update(
+                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],}
+                
+            )
+
+            new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
+            new_trade_2.update(
+                {
+                    '_lots': new_trade['_lots'] * (1 - modif_trade['split_ratio']) * modif_trade['split_ratio_2'],
+                    '_TP': new_trade['_TP'] * 3
+                }
+            )
+
+            new_trade_3 = new_trade.copy()                      #Smaller Proportional Trade
+            new_trade_3.update(
+                {
+                    '_lots': new_trade['_lots'] - new_trade_1['_lots'] - new_trade_2['_lots'],
+                    '_TP': new_trade['_TP'] * 5
+                }
+            )
+
+
+            for i in [
+                new_trade_1, new_trade_2, new_trade_3
             ]:
                 self.zmq_dwx._DWX_MTX_NEW_TRADE_(i)
                 time.sleep(0.1)
@@ -178,7 +209,7 @@ class DwxModel():
         #Dummy Data for testing
         #Data duration statically selected to be set to be at least 30 data points from current time
         new_trade_dict['_start'] = (
-            pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 30))).strftime('%Y.%m.%d %H:%M:00')
+            pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 72))).strftime('%Y.%m.%d %H:%M:00')
 
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00')
 
@@ -206,9 +237,8 @@ class DwxModel():
         # account balance
         # symbol
         new_trade = RiskManagement(self.zmq_dwx,
-                                        new_trade_dict['_order'],   #order type
-                                        new_trade_dict['instr_type'],
-                                        0.02,                      # Percentage risk of account
+                                        new_trade_dict,             # New Trade details
+                                        0.012,                      # Percentage risk of account
                                         account_info['_data'][-1],
                                         trade_hist_df,
                                         hist_db_key)
