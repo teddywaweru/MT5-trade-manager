@@ -18,6 +18,7 @@ class DwxModel():
     """[summary]
     """
     def __init__(self):
+
         self.zmq_dwx = dwx()
         #to select periods in minutes as MT4 formats
         self.periods = {
