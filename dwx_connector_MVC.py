@@ -24,6 +24,28 @@ class DwxModel():
                 1: 'M1', 5 : 'M5', 15 : 'M15', 30 : 'M30', 60 : 'H1',
                 240 : 'H4', 1440 : 'D1', 10080 : 'W1'
             }
+        self.curr_mtl_pairs = (
+                            'AUDCAD', 'AUDCHF','AUDJPY', 'AUDNZD', 'AUDSGD','AUDUSD',
+                            'CADCHF','CADJPY',
+                            'CHFJPY','CHFSGD',
+                            'EURAUD','EURCAD','EURCHF', 'EURGBP', 'EURJPY',\
+                                'EURNZD', 'EURSGD', 'EURUSD',
+                            'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD',\
+                                'GBPSGD', 'GBPUSD',
+                            'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD',
+                            'SEKJPY',
+                            'SGDJPY',
+                            'USDCAD', 'USDCHF', 'USDCNH', 'USDSGD', 'USDJPY', 'USDZAR',
+                            'XAGUSD', 'XAUUSD'
+                            )
+
+        self.comm_indcs = (
+                        'AUS200', 'CHINAH', 'CN50', 'FRA40', 'HK50', 'NAS100',
+                        'GER40', 'GERTEC30', 'NETH25', 'SCI25', 'SPA35','UK100',
+                        'US30', 'US500', 'US2000', 'USDX',
+                        'SpotCrude', 'Cattle', 'Cotton', 'Copper', 'OrangeJuice',
+                        'Soybeans', 'SpotBrent'
+                        )
 
 
 
@@ -107,15 +129,14 @@ class DwxModel():
         elif modif_trade['trade_strategy'] == 'SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1.update(
-                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],
-                '_TP': new_trade['_TP'] * 0.5}
+                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],}
                 
             )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2.update(
                 {'_lots': new_trade['_lots'] - new_trade_1['_lots'],
-                '_SL': new_trade['_SL'] * 2}
+                '_TP': new_trade['_TP'] * 2}
             )
 
 
@@ -160,6 +181,10 @@ class DwxModel():
             pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 30))).strftime('%Y.%m.%d %H:%M:00')
 
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00')
+
+        new_trade_dict['instr_type'] = 'curr_mtl' if new_trade_dict['_symbol'] in self.curr_mtl_pairs \
+                                    else 'comm_indcs' if new_trade_dict['_symbol'] in self.comm_indcs \
+                                    else None
         
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
@@ -182,6 +207,7 @@ class DwxModel():
         # symbol
         new_trade = RiskManagement(self.zmq_dwx,
                                         new_trade_dict['_order'],   #order type
+                                        new_trade_dict['instr_type'],
                                         0.02,                      # Percentage risk of account
                                         account_info['_data'][-1],
                                         trade_hist_df,

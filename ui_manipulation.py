@@ -7,7 +7,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Slot, Qt
 from UI_templates import main_window as main_window
 # from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
-from dwx_connector_mvc import DwxModel
+from dwx_connector_MVC import DwxModel
 from table_MVC import TableModel
 import pandas as pd
 
@@ -21,28 +21,44 @@ class CallUi(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
 
+        # Load DWX Connection Object
         self.dwx_mvc = DwxModel()
 
+        # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
 
+
+        #Load Main UI objects
         self.ui.setupUi(self)
 
+        # Load widget functions (BTN, COMBOBOX) for reacting to actions
         self.setup_btn_connect()
 
+        self.setup_combobox_connect()
+
+        #New Prepared Trade Object
         self.prep_new_trade = None
 
+        #List of Order Buttons. For iterations.
         self.order_btns = [
             self.ui.SELL_BTN, self.ui.SELL_LMT_BTN,
             self.ui.BUY_BTN, self.ui.BUY_LMT_BTN
         ]
 
+        #List of Order Strategy buttons. For iterations
         self.order_strategy_btns = [
             self.ui.SPLIT_TRADE_BTN, self.ui.SINGLE_TRADE_BTN, self.ui.MINIMAL_TRADE_BTN
         ]
 
+        #List of Timeframe buttons. For iterations
         self.order_timeframe_btns = [
             self.ui.MIN_1440_BTN, self.ui.MIN_15_BTN, self.ui.MIN_60_BTN
-        ]
+            ]
+
+        #ist of instrument comboboxes. For iterations
+        self.instr_comboboxes = [
+            self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
+            ]
 
 
 
@@ -64,13 +80,32 @@ class CallUi(QtWidgets.QMainWindow):
         self.table_model = TableModel(data)
         self.ui.tableView.setModel(self.table_model)
 
-        #Disable Execute Trade button if the currency pair is changed.
-        self.ui.CURRENCY_PAIRS_COMBOBOX.currentTextChanged.connect(self.disable_execute_trade_btn)
 
     def disable_execute_trade_btn(self):
-        """[summary]
+        """Function to disable the Execute Trade button.
         """
         self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(False)
+
+    #Change the current text in the alternate combobox to None
+    def combobox_text_changed(self, instr_combobox):
+        """_summary_
+
+        Args:
+            instr_combobox (combobox Object): Combobox object that created the signal
+        """  
+        #Disable the Execute button.      
+        self.disable_execute_trade_btn()
+
+        #If current text is None, return
+        if instr_combobox.currentText() == '':
+            return
+
+        #Else iterate through the list of comboboxes
+        for i in self.instr_comboboxes:
+            #If i is not the currently altered combobox, alter the text to blank
+            if i != instr_combobox:
+                i.setCurrentText('')
+        print('Current Instrument to trade: {}.'.format(instr_combobox.currentText()))
 
     def order_type_btn_clicked(self, order_btn):
         """Styling & disabling for order buttons depending on which one is selected.
@@ -194,8 +229,20 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
         )
 
+
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
+
+    def setup_combobox_connect(self):
+        """_summary_
+        """   
+
+        self.ui.COMMS_INDCS_COMBOBOX.currentTextChanged.connect(
+            lambda: self.combobox_text_changed(self.ui.COMMS_INDCS_COMBOBOX)
+        )
+        self.ui.CURRENCY_PAIRS_METALS_COMBOBOX.currentTextChanged.connect(
+            lambda: self.combobox_text_changed(self.ui.CURRENCY_PAIRS_METALS_COMBOBOX)
+        )
 
 
     def prepare_new_trade(self):
@@ -204,14 +251,18 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Check if the text entered is a valid currency pair that
         # can be operated on ie. existing pairs on the list.
-        _symbol = self.ui.CURRENCY_PAIRS_COMBOBOX.currentText()
-        if _symbol not in [self.ui.CURRENCY_PAIRS_COMBOBOX.itemText(i) for i in range(self.ui.CURRENCY_PAIRS_COMBOBOX.count())]:
-            print('Select a Currency Pair')
-            return
+        for i in self.instr_comboboxes:
+            if i.currentText() != '':
+                _symbol = i.currentText()
+                
+                #Ensure that the text is in the current list of traded instruments.
+                if _symbol not in [i.itemText(j) for j in range(i.count())]:
+                    print('Select a Valid Instrument.')
+
+                    return
 
         _order = ''
         #Iterate through the order types to find the selected one
-        #Do nothing if none is selected
         for i in self.order_btns:
             if i.isChecked():
                 _order = i.text()
