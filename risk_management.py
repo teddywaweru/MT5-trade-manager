@@ -142,8 +142,10 @@ class RiskManagement():
                 # Calculate pip value for the trade
                 # ie. Pip = %Risk Acct. Amount / Risk Stop Loss
 
-                self.atr_in_pips = atr * 10 if self._symbol[:3] in \
-                                    ['XAU', 'XPD', 'XPT'] \
+                self.atr_in_pips = atr if self._symbol[:3] in \
+                                ['XPT'] \
+                            else atr * 10 if self._symbol[:3] in \
+                                ['XAU', 'XPD'] \
                             else atr * 100 if self._symbol[:3] in \
                                 ['XAG'] \
                                     or self._symbol[3:] in \
@@ -151,7 +153,7 @@ class RiskManagement():
                             else atr * 1000 if self._symbol[:3] in \
                                 ['SEK',] \
                             else atr * 10000 if self._symbol[:3] in \
-                                ['AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NZD', 'SGD', 'USD'] \
+                                ['AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NOK', 'NZD', 'SGD', 'USD'] \
                             else None
 
                 # Calculate the Pip Value based on the new trade to be taken, ie.
@@ -169,7 +171,7 @@ class RiskManagement():
                             else 0.1 * self.calc_pip_value / self.pip_value if \
                                 self._symbol[:3] in \
                                 ['XAU', 'XAG', 'XPD', 'XPT', \
-                                'AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NZD', 'SGD', 'USD'] \
+                                'AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NOK', 'NZD', 'SGD', 'USD'] \
                             else None
 
                 # Calculate pip value for the trade

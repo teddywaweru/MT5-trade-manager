@@ -361,7 +361,7 @@ class CallUi(QtWidgets.QMainWindow):
                 },
                 {
                     'trade_strategy': trade_strategy,
-                    'split_ratio': 0.8,
+                    'split_ratio': 0.5,
                     'split_ratio_2' : 0.5
                 }
             )

@@ -32,11 +32,12 @@ class DwxModel():
                                 'EURNZD', 'EURSGD', 'EURUSD',
                             'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD',\
                                 'GBPSGD', 'GBPUSD',
+                            'NOKSEK',
                             'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD',
                             'SEKJPY',
                             'SGDJPY',
-                            'USDCAD', 'USDCHF', 'USDCNH', 'USDSGD', 'USDJPY', 'USDZAR',
-                            'XAGUSD', 'XAUUSD'
+                            'USDCAD', 'USDCHF', 'USDCNH', 'USDJPY', 'USDSGD', 'USDTHB', 'USDZAR',
+                            'XAGUSD', 'XAUUSD', 'XPDUSD', 'XPTUSD'
                             )
 
         self.comm_indcs = (
