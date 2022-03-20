@@ -41,13 +41,16 @@ class CallUi(QtWidgets.QMainWindow):
 
         #List of Order Buttons. For iterations.
         self.order_btns = [
-            self.ui.SELL_BTN, self.ui.SELL_LMT_BTN,
-            self.ui.BUY_BTN, self.ui.BUY_LMT_BTN
+            self.ui.SELL_BTN, self.ui.SELL_LIMIT_BTN,
+            self.ui.BUY_BTN, self.ui.BUY_LIMIT_BTN
         ]
 
         #List of Order Strategy buttons. For iterations
         self.order_strategy_btns = [
-            self.ui.SPLIT_TRADE_BTN, self.ui.SINGLE_TRADE_BTN, self.ui.MINIMAL_TRADE_BTN
+            self.ui.SINGLE_TRADE_BTN,
+            self.ui.MINIMAL_TRADE_BTN,
+            self.ui.TWO_WAY_SPLIT_TRADE_BTN,
+            self.ui.THREE_WAY_SPLIT_TRADE_BTN
         ]
 
         #List of Timeframe buttons. For iterations
@@ -113,7 +116,7 @@ class CallUi(QtWidgets.QMainWindow):
         Args:
             order_btn (QButton Object): The button that has been checked.
             Options are: SELL, BUY, SELL LIMIT, BUY LIMIT, SELL STOP, BUY STOP
-        """               
+        """   
         for i in self.order_btns:
             if i != order_btn:
                 if i.isChecked():
@@ -121,16 +124,16 @@ class CallUi(QtWidgets.QMainWindow):
                     i.setStyleSheet('')
 
         if order_btn.isChecked():
-            if order_btn.text() == 'SELL':
-                self.ui.SELL_BTN.setStyleSheet(
+            if order_btn.text() in ['SELL', 'SELL LIMIT']:
+                order_btn.setStyleSheet(
             'background-color: #A01;'
             'border-style: outset;'
             'border-width: 2px;'
             # 'border-color: beige;'
                 )
 
-            elif order_btn.text() == 'BUY':
-                self.ui.BUY_BTN.setStyleSheet(
+            elif order_btn.text() in ['BUY', 'BUY LIMIT']:
+                order_btn.setStyleSheet(
             'background-color: #ABF;'
             'border-style: outset;'
             'border-width: 2px;'
@@ -165,7 +168,12 @@ class CallUi(QtWidgets.QMainWindow):
 
         Args:
             order_timeframe ([type]): [description]
-        """        
+        """
+
+        #Disable the Execute button.      
+        self.disable_execute_trade_btn()
+
+
         for i in self.order_timeframe_btns:
             if i != order_timeframe:
                 if i.isChecked():
@@ -201,14 +209,17 @@ class CallUi(QtWidgets.QMainWindow):
         self.ui.BUY_BTN.clicked.connect(
             lambda: self.order_type_btn_clicked(self.ui.BUY_BTN))
 
-        self.ui.BUY_LMT_BTN.clicked.connect(
-            lambda: self.order_type_btn_clicked(self.ui.BUY_LMT_BTN))
+        self.ui.BUY_LIMIT_BTN.clicked.connect(
+            lambda: self.order_type_btn_clicked(self.ui.BUY_LIMIT_BTN))
 
-        self.ui.SELL_LMT_BTN.clicked.connect(
-            lambda: self.order_type_btn_clicked(self.ui.SELL_LMT_BTN))
+        self.ui.SELL_LIMIT_BTN.clicked.connect(
+            lambda: self.order_type_btn_clicked(self.ui.SELL_LIMIT_BTN))
 
-        self.ui.SPLIT_TRADE_BTN.clicked.connect(
-            lambda: self.order_strategy_btn_clicked(self.ui.SPLIT_TRADE_BTN))
+        self.ui.TWO_WAY_SPLIT_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(self.ui.TWO_WAY_SPLIT_TRADE_BTN))
+        
+        self.ui.THREE_WAY_SPLIT_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(self.ui.THREE_WAY_SPLIT_TRADE_BTN))
         
         self.ui.SINGLE_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.SINGLE_TRADE_BTN))
@@ -283,10 +294,20 @@ class CallUi(QtWidgets.QMainWindow):
             return
 
 
+        if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() != '':
+            try:
+                buy_sell_limit = int(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText())
+            except Exception:
+                print('Buy/Sell Limit is not a valid Double value')
+                return
+        else: buy_sell_limit = ''
+
+
         new_trade_dict = {
             '_symbol': _symbol,
             '_order': _order,
-            '_timeframe': _timeframe
+            '_timeframe': _timeframe,
+            'buy_sell_limit': buy_sell_limit
         }
         try:
             self.prep_new_trade = self.dwx_mvc.prepare_new_trade(new_trade_dict)
@@ -312,7 +333,7 @@ class CallUi(QtWidgets.QMainWindow):
         #iterate to select the trade strategy that is selected.
         #split the trade, or make a single order
         for i in self.order_strategy_btns:
-            if i.isChecked(): 
+            if i.isChecked():
                 trade_strategy = i.text()
 
         if trade_strategy == '':
@@ -320,14 +341,14 @@ class CallUi(QtWidgets.QMainWindow):
             return
 
         order_type = {
-            'SELL': 1, 'BUY': 0, 'SELL LIMIT': 2
+            'SELL': 1, 'BUY': 0, 'SELL LIMIT': 2, 'BUY LIMIT': 3
         }
 
         try:
             self.dwx_mvc.new_trade(
                 {
                 '_action': 'OPEN',
-                '_type': order_type[self.prep_new_trade._order],      #1 for SELL, O for BUY
+                '_type': order_type[self.prep_new_trade.new_trade_dict['_order']],      #1 for SELL, O for BUY
                 '_symbol': self.prep_new_trade._symbol,
                 '_price': 0.0,                  #Refers to current price value
                 # SL/TP in POINTS, not pips.
@@ -340,7 +361,8 @@ class CallUi(QtWidgets.QMainWindow):
                 },
                 {
                     'trade_strategy': trade_strategy,
-                    'split_ratio': 0.5
+                    'split_ratio': 0.5,
+                    'split_ratio_2' : 0.5
                 }
             )
         except Exception as ex:
