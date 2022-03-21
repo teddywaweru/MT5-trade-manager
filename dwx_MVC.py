@@ -4,22 +4,33 @@ Returns:
     [type]: [description]
 """
 
+from os.path import exists
 import time
 from PySide6.QtCore import Slot, Qt
 # import sys
+
+#DWX Connector method - dwx_zmq, or dwx_connect
+# from dwx_connector import connect_dwx
+
 # from PyQt5 import QtCore, QtGui, QtWidgets
-from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
+#DWX_ZeroMQ Connector
+from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx_zmq
+
+#DWXConnect API
+from dwx_connect.api.dwx_client import dwx_client as dwx_conn
 from data_manipulation import DataManipulation
 from risk_management import RiskManagement
 import pandas as pd
 
 
-class DwxModel():
+class DwxZmqModel():
     """[summary]
     """
-    def __init__(self):
+    def __init__(self, dwx = None):
 
-        self.zmq_dwx = dwx()
+        # self.dwx = connect_dwx()
+        self.dwx = dwx
+        
         #to select periods in minutes as MT4 formats
         self.periods = {
                 1: 'M1', 5 : 'M5', 15 : 'M15', 30 : 'M30', 60 : 'H1',
@@ -60,7 +71,7 @@ class DwxModel():
         """
         for pair in list_of_pairs:
             #subscribe to Pairs in List
-            self.zmq_dwx._DWX_MTX_SUBSCRIBE_MARKETDATA_(pair)
+            self.dwx._DWX_MTX_SUBSCRIBE_MARKETDATA_(pair)
             # print('Subscribed to {}'.format(pair))
 
 
@@ -87,7 +98,7 @@ class DwxModel():
         # Automatically select start period?
         # No. Should be provided, but automatically selected in the application.
         #end time would always be now.
-        self.zmq_dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
+        self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
         time.sleep(0.1)
 
         #Push collected data to data manipulation
@@ -101,7 +112,7 @@ class DwxModel():
         
         #Create data manipulation object for basic Data Wrangling
         #Returns DataFrame with OHLC & atr
-        hist_db_df = DataManipulation(self.zmq_dwx._History_DB[hist_db_key]).data_df
+        hist_db_df = DataManipulation(self.dwx._History_DB[hist_db_key]).data_df
 
         return hist_db_key, hist_db_df
 
@@ -112,7 +123,7 @@ class DwxModel():
     def close_all_trades(self):
         """[summary]
         """
-        self.zmq_dwx._DWX_MTX_CLOSE_ALL_TRADES_()
+        self.dwx._DWX_MTX_CLOSE_ALL_TRADES_()
 
     # Open New Trade
     @Slot()
@@ -126,7 +137,7 @@ class DwxModel():
         #A00 move calculations of SL & TP to risk_management.py
         
         if modif_trade['trade_strategy'] == 'SINGLE TRADE':
-            self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade)
+            self.dwx._DWX_MTX_NEW_TRADE_(new_trade)
 
         elif modif_trade['trade_strategy'] == '2-WAY SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
@@ -145,7 +156,7 @@ class DwxModel():
             for i in [
                 new_trade_1, new_trade_2
             ]:
-                self.zmq_dwx._DWX_MTX_NEW_TRADE_(i)
+                self.dwx._DWX_MTX_NEW_TRADE_(i)
                 time.sleep(0.1)
 
 
@@ -176,7 +187,7 @@ class DwxModel():
             for i in [
                 new_trade_1, new_trade_2, new_trade_3
             ]:
-                self.zmq_dwx._DWX_MTX_NEW_TRADE_(i)
+                self.dwx._DWX_MTX_NEW_TRADE_(i)
                 time.sleep(0.1)
 
         elif modif_trade['trade_strategy'] == 'MINIMAL TRADE':
@@ -186,15 +197,15 @@ class DwxModel():
                 }
             )
 
-            self.zmq_dwx._DWX_MTX_NEW_TRADE_(new_trade)
+            self.dwx._DWX_MTX_NEW_TRADE_(new_trade)
 
     # Get all open trades
     @Slot()
     def get_trades(self):
         """[summary]
         """
-        # zmq_dwx = dwx()
-        self.zmq_dwx._DWX_MTX_GET_ALL_OPEN_TRADES_()
+        # dwx = dwx()
+        self.dwx._DWX_MTX_GET_ALL_OPEN_TRADES_()
 
     # Prepare New Trade. Involves calculating all necessary parameters for the order.
     # These form the default values that may then be changed/edited manually.
@@ -221,7 +232,7 @@ class DwxModel():
         
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
-        # self.zmq_dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
+        # self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
         hist_db_key, trade_hist_df = self.send_hist_request(new_trade_dict)
 
         #Generate History DB Key based on symbol & timeframe
@@ -231,14 +242,14 @@ class DwxModel():
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict.
         # For now, this is collected from the thread data output dict.
-        self.zmq_dwx._DWX_MTX_GET_ACCOUNT_INFO_()
+        self.dwx._DWX_MTX_GET_ACCOUNT_INFO_()
         time.sleep(0.3)
-        account_info = self.zmq_dwx._thread_data_output
+        account_info = self.dwx._thread_data_output
 
         #Initiate  Risk Management Class
         # account balance
         # symbol
-        new_trade = RiskManagement(self.zmq_dwx,
+        new_trade = RiskManagement(self.dwx,
                                         new_trade_dict,             # New Trade details
                                         0.012,                      # Percentage risk of account
                                         account_info['_data'][-1],
@@ -264,3 +275,11 @@ class DwxModel():
 
         #A00 Clear historical DB
 
+
+
+class DwxConnModel():
+
+    def __init__(self, dwx = None):
+
+        self.dwx = dwx
+    pass

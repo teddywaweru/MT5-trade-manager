@@ -4,7 +4,7 @@ Returns:
     [type]: [description]
 """
 import time
-from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
+from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
 import numpy as np
 # import pandas as pd
 # from dwx_connector_MVC import DwxModel

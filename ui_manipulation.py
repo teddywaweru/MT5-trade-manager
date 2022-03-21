@@ -5,9 +5,9 @@ import time
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Slot, Qt
-from UI_templates import main_window 
-# from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
-from dwx_connector_MVC import DwxModel
+from UI_templates import main_window
+# from dwx_MVC import DwxModel
+from dwx_connector import connect_dwx as conn_dwx
 from table_MVC import TableModel
 import pandas as pd
 
@@ -22,7 +22,8 @@ class CallUi(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
 
         # Load DWX Connection Object
-        self.dwx_mvc = DwxModel()
+        # self.dwx_mvc = DwxModel()
+        self.dwx, self.dwx_mvc = conn_dwx()
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
@@ -192,7 +193,7 @@ class CallUi(QtWidgets.QMainWindow):
     def setup_btn_connect(self):
         """[Initiate button functions]
         """
-        self.ui.INIT_CONNECTOR_BTN.clicked.connect(DwxModel)
+        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.dwx_mvc.get_trades)
         test_hist_req_data = [
             {'_symbol': 'EURUSD',
             '_timeframe': 1440,
@@ -371,11 +372,14 @@ class CallUi(QtWidgets.QMainWindow):
             print(_msg)
 
 
+
 def setup_window():
     """
     Initialize app window
     """
     app = QtWidgets.QApplication(sys.argv)
     now_window = CallUi()
+    # print(time.time())
+    print(time.time())
     now_window.show()
     sys.exit(app.exec_())
