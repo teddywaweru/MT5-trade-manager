@@ -4,7 +4,7 @@ Returns:
     [type]: [description]
 """
 import time
-from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
+# from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx
 import numpy as np
 # import pandas as pd
 # from dwx_connector_MVC import DwxModel
@@ -15,27 +15,24 @@ import numpy as np
 class RiskManagement():
     """[summary]
     """
-    def __init__(self, zmq_dwx = None,
+    def __init__(self, dwx,
                 new_trade_dict = None,
                 risk_ratio = None,
                 account_info = None,
                 new_trade_df = None,
                 hist_db_key = None):
 
-        self.new_trade_dict = new_trade_dict    #Dict containing the new trade's details
+        self.trade_dict = new_trade_dict    #Dict containing the new trade's details
 
         if risk_ratio is None:
-            risk_ratio = 0.02   # Default value for risk. 1% of the account.
+            risk_ratio = 0.0095   # Default value for risk. >1% of the account.
         self.risk_ratio = risk_ratio
 
         self.risk_amount = None         #Determines stop loss placement
 
-        if zmq_dwx is None:
-            zmq_dwx = dwx()
+        self.dwx = dwx          #dwx connection object. Either DWXClient, or DWXConn
 
-        self.zmq_dwx = zmq_dwx          #zmq connection object
-
-        self.new_trade_df = new_trade_df#DF containing historic data for ATR calculation
+        self.trade_df = new_trade_df#DF containing historic data for ATR calculation
 
         self.account_info = account_info#Account information
 
@@ -45,36 +42,33 @@ class RiskManagement():
 
         self._timeframe = hist_db_key.partition('_')[2] #Partitioning the symbol EURUSD_D1 to obtain timeframe
 
-        self.pip_value = None
-
-        self.atr_in_pips = None
-
-        self.stop_loss = None
-
-        self.take_profit = None
-
-        self.lot_size = None
-
-        self.calc_pip_value = None
-
         self._symbol_bid = None
 
         self._symbol_ask = None
+
+        self.sec_symbol = None
+
+        self.sec_symbol_bid = None
+
+        self.sec_symbol_ask = None
+
+        self.atr = None
+        
+        self.pip_value = None
+
+        self.calc_pip_value = None
+
+        self.atr_in_pips = None
+
+        self.lot_size = None
 
         self.sl_multiplier = 1.5
 
         self.tp_multiplier = 1
 
+        self.stop_loss = None
 
-        self.sec_symbol = None
-
-        #Major Currency pairs, where USD is the secondary currency traded.
-        #ADD commodities ie XAG, XPT, XAU
-        self.major_curr = ['AUD', 'EUR', 'GBP', 'NZD',  'XAG', 'XPT']
-
-        # Exotic pairs whose values do not conform to typical 5 point values ie. SEK, JPY
-        #ADD all necessary pairs to be considered
-        self.exotic_curr = ['SEK', 'JPY', 'ZAR',]
+        self.take_profit = None
 
 
 
@@ -86,8 +80,8 @@ class RiskManagement():
         """[summary]
         """
 
-        # Calculations for metal & FX pairs
-        if self.new_trade_dict['instr_type'] == 'curr_mtl':
+        # Calculations for metals & FX pairs
+        if self.trade_dict['instr_type'] == 'curr_mtl':
             try:
                 
                 #Get bid & ask prices of the _symbol
@@ -98,61 +92,67 @@ class RiskManagement():
                 #A00 change so that the account currency is queried instead.
                 if 'USD' in self._symbol:
 
-                    #if USD is the first term in the currency pair ie. USDJPY, USDCAD
-                    if 'USD' in self._symbol[:3]:
-                        self.pip_value = 1 / ((self._symbol_bid + self._symbol_ask) / 2)
+                    #IF USD is the second term in the currency pair, ie. NZDUSD, AUDUSD
+                    # Pip value is equal to 1
+                    #elif USD is the first term in the currency pair ie. USDJPY, USDCAD
+                    # Pip value is given by the inverse of the market price
+                    #We take the avg of bid & ask, & get the inverse
+                    self.pip_value = 1 if 'USD' in self._symbol[3:] \
+                            else 1 / ((self._symbol_bid + self._symbol_ask) / 2)
 
-                    #ELSE USD is the second term in the currency pair, ie. NZDUSD, AUDUSD...
-                    else:
-                        self.pip_value = 1
 
                 #if USD is not in the currency pair ie. AUDJPY, EURGBP...
                 else:
                     #ADD Can be refracted to form a single function that calculates pip values
 
-                    #Check whether _symbol contains one of the major pairs
-                    # (where USD is the secondary currency.)
+
+                    #Check whether the secondary currency in _symbol contains one of the currencies
+                    # where USD is the secondary currency in its USD pair ie. AUDUSD, GBPUSD...
                     #If secondary symbol is a major currency ie. AUD, NZD, EUR, GBP...
-                    if self._symbol[3:] in self.major_curr:
-                        #sec_symbol of the trade combines the major pair & the USD for calculations
-                        self.sec_symbol = self._symbol[3:] + 'USD'
+                    #else secondary currency  IN _symbol does not form a pair with the USD
+                    # as the secondary currency ie. USDCAD, USDJPY...
+                    # ie. for the EURGBP pair, the sec_symbol shall be GBPUSD (if)
+                    # ie. for the AUDJPY pair, the sec_symbol shall be USDJPY (else)
+                    self.sec_symbol = self._symbol[3:] + 'USD' if self._symbol[3:] \
+                            in MAJOR_CURRENCY else 'USD' + self._symbol[3:]
 
-                        # Collect bid/ask prices from Market_DB
-                        sec_symbol_bid, sec_symbol_ask = self.bid_ask_price(self.sec_symbol)
+                    # Collect bid/ask prices for the secondary symbol from Market_DB
+                    self.sec_symbol_bid, self.sec_symbol_ask = self.bid_ask_price(self.sec_symbol)
 
-                        self.pip_value = (sec_symbol_bid + sec_symbol_ask) / 2
+                    #if USD is the first term in the currency pair ie. USDJPY, USDCAD
+                    # Pip value is given by the inverse of the market price
+                    #We take the avg of bid & ask, & get the inverse
+                    #ELSE USD is the second term in the currency pair, ie. NZDUSD, AUDUSD
+                    # Pip value is equal to 1
+                    self.pip_value = (self.sec_symbol_bid + self.sec_symbol_ask) / 2 if 'USD' in self.sec_symbol[3:] \
+                            else 1 / ((self.sec_symbol_bid + self.sec_symbol_ask) / 2)
 
-                    #else secondary currency does not form a major pair with the USD
-                    # ie. USDCAD, USDJPY...
-                    else:
-                        self.sec_symbol = 'USD' + self._symbol[3:]
-
-                        # Collect bid/ask prices from Market_DB
-                        sec_symbol_bid, sec_symbol_ask = self.bid_ask_price(self.sec_symbol)
-
-                        self.pip_value = 1 / ((sec_symbol_bid + sec_symbol_ask) / 2)
 
                 #ATR value from dataframe
-                atr = self.new_trade_df['atr'].iloc[-1]
+                self.atr = self.trade_df['atr'].iloc[-1]
 
-                # Calculate risk amount of the accountequity
-                self.risk_amount = self.account_info['account_equity'] * self.risk_ratio
+                # Calculate risk amount of the account balance
+                if hasattr(self.dwx, 'subscribe_symbols'):
+                    self.risk_amount = self.account_info['balance'] * self.risk_ratio
+                else:
+                    self.risk_amount = self.account_info['account_balance'] * self.risk_ratio
+                
 
 
-                # Calculate pip value for the trade
-                # ie. Pip = %Risk Acct. Amount / Risk Stop Loss
-
-                self.atr_in_pips = atr if self._symbol[:3] in \
+                # Calculate ATR in pip value for the pair
+                # Variations are dependent on how the ATR is calculated for
+                # the _symbol
+                self.atr_in_pips = self.atr if self._symbol[:3] in \
                                 ['XPT'] \
-                            else atr * 10 if self._symbol[:3] in \
+                            else self.atr * 10 if self._symbol[:3] in \
                                 ['XAU', 'XPD'] \
-                            else atr * 100 if self._symbol[:3] in \
+                            else self.atr * 100 if self._symbol[:3] in \
                                 ['XAG'] \
                                     or self._symbol[3:] in \
                                         ['JPY'] \
-                            else atr * 1000 if self._symbol[:3] in \
+                            else self.atr * 1000 if self._symbol[:3] in \
                                 ['SEK',] \
-                            else atr * 10000 if self._symbol[:3] in \
+                            else self.atr * 10000 if self._symbol[:3] in \
                                 ['AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NOK', 'NZD', 'SGD', 'USD'] \
                             else None
 
@@ -174,70 +174,17 @@ class RiskManagement():
                                 'AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'NOK', 'NZD', 'SGD', 'USD'] \
                             else None
 
-                # Calculate pip value for the trade
-                # ie. Pip = %Risk Acct. Amount / Risk Stop Loss
-                # if self._symbol[:3] not in self.exotic_curr and self._symbol[3:] not in self.exotic_curr:
 
-                #     # self.atr_in_pips = self.calc_atr_pip_lot(pair_type = 'comm_pair')
-                #     # self.atr_in_pips = atr * 10000
-
-                #     # Calculate the Pip Value based on the new trade to be taken, ie.
-                #     # Relating the risked amount (%Risk) to the risked pips
-                #     # (stoplossMultiplier * ATR_in_pips)
-                #     self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
-
-                #     #To get the lot size, divide the current pip value of the
-                #     # _symbol by the calculated pip value of the new trade
-                #     # self.lot_size = self.calc_pip_value / self.pip_value
-                #     # 0.1 refers to the lot size for a self.pip_value
-                #     self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
-
-                # # Functionality for exotic pairs whose atr_in_pips may vary from the major pairs
-                # #a00 functionality for indices
-                # else:
-                #     if self._symbol[3:] == 'JPY':
-                #         self.atr_in_pips = atr * 100
-
-                #         # Calculate the Pip Value based on the new trade to be taken, ie.
-                #         # Relating the risked amount (%Risk) to the risked pips (factor * ATR_in_pips)
-                #         self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
-
-                #         #To get the lot size, divide the current pip value of the
-                #         # _symbol by the calculated pip value of the new trade
-                #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01
-
-                #     elif self._symbol[3:] == 'SEK' or self._symbol[3:] == 'ZAR':
-                #         self.atr_in_pips = atr * 10000
-
-                #         # Calculate the Pip Value based on the new trade to be taken, ie.
-                #         # Relating the risked amount (%Risk) to the risked pips
-                #         # (factor * ATR_in_pips)
-                #         self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
-
-                #         #To get the lot size, divide the current pip value of the _symbol
-                #         # by the calculated pip value of the new trade
-                #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
-
-                #         #Calculation for XAU
-                #     elif self._symbol[:3] == 'XAU':
-
-                #         self.atr_in_pips = self.calc_atr_pip_lot(pair_type = 'XAU')
-                #         self.atr_in_pips = atr * 10
-
-                #         # Calculate the Pip Value based on the new trade to be taken, ie.
-                #         # Relating the risked amount (%Risk) to the risked pips
-                #         # (factor * ATR_in_pips)
-                #         self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
-
-                #         #To get the lot size, divide the current pip value of the _symbol
-                #         # by the calculated pip value of the new trade
-                #         self.lot_size = 0.1 * self.calc_pip_value / self.pip_value
-
-
-                self.stop_loss, self.take_profit = self.calc_sl_tp(atr)
+                self.stop_loss, self.take_profit = self.calc_sl_tp(self.atr)
 
             except Exception as ex:
-                print(ex)
+                ex_str = 'Exception Type: {0}. Args:\n{1!r}'
+                ex_msg = ex_str.format(type(ex).__name__, ex.args)
+                print(ex_msg)
+
+
+
+
 
         # Calculations for Commodities & Indices
         else:
@@ -247,86 +194,47 @@ class RiskManagement():
 
 
                 #calculate pip value of commodity or index
-                # Pip values for indices is dependent on the country in question.
+                # Pip values for indices is dependent on the _symbol's jurisdiction.
                 #ie. GERTEC pip value would be determined based on the EURUSD price.
-                #AUS200 would be determined based on the AUD USD qute price.
+                #AUS200 would be determined based on the AUDUSD quote price.
                 #'USD' due to the current account type.
 
-
-                    
-
-                #For AUS200, query the AUDUSD price to calculate pip value
-                if self._symbol in ['AUS200']:
-                    audusd_bid, audusd_ask = self.bid_ask_price('AUDUSD')
-
-                    #get pip value
-                    self.pip_value = (audusd_bid + audusd_ask) / 2
-
-
-
-
-                #For CHINAH, query the USDHKD price to calculate pip value
-                if self._symbol in ['CHINAH']:
-                    usdhkd_bid, usdhkd_ask = self.bid_ask_price('USDHKD')
-
-                    #get pip value
-                    self.pip_value = 1 / ((usdhkd_bid + usdhkd_ask) / 2)
-
-
-                #For CN50, the pip value is taken as a 1:100 against the USD.
-                #Similar scenario for US indices & commodities
-                elif self._symbol in ['CN50', 'US30', 'US500', 'US2000', 'NAS100', 'USDX']:
+                # IF in the following list, the pip_value is directly pegged to the USD value.
+                # ie. the _symbol for US30 would be US30USD
+                if self._symbol in USD_BASED_INDICES_COMMODITIES:
                     self.pip_value = 1
+                
+                # ELSE remaining list of indices & commodities are based on
+                #different currency pairs, as populated in the 
+                #INDICES_SECONDARY_SYMBOL dictionary
+                else:
+
+                    self.sec_symbol_bid, self.sec_symbol_ask = \
+                        self.bid_ask_price(INDICES_SECONDARY_SYMBOL.get(self._symbol))
+
+                    self.pip_value = (self.sec_symbol_bid + self.sec_symbol_ask) / 2 if 'USD' in self.sec_symbol[3:] \
+                        else 1 / ((self.sec_symbol_bid + self.sec_symbol_ask) / 2)
 
 
-                #For all EURO-ZONE indices, query the EURUSD price to calculate pip value
-                elif self._symbol in ['GERTEC30', 'GER40', 'FRA40', 'SPA35', 'NETH25']:
-                    eurusd_bid, eurusd_ask = self.bid_ask_price('EURUSD')
-
-                    #get pip value
-                    self.pip_value = (eurusd_bid + eurusd_ask) / 2
-
-
-                #For UK100, query the GBPUSD price to calculate pip value
-                elif self._symbol in ['UK100']:
-                    gbpusd_bid, gbpusd_ask = self.bid_ask_price('GBPUSD')
-
-                    #get pip value
-                    self.pip_value = (gbpusd_bid + gbpusd_ask) / 2
-
-                #For SCI25, query the USDSGD price to calculate pip value
-                elif self._symbol in ['SCI25']:
-                    usdsgd_bid, usdsgd_ask = self.bid_ask_price('USDSGD')
-
-                    #get pip value
-                    self.pip_value = 1 / ((usdsgd_bid + usdsgd_ask) / 2)
-
-
-                elif self._symbol in ['SpotBrent']:
-                    self.pip_value = 1
-
-
-                # account currency consideration
-
-                # calculate atr
-                atr = self.new_trade_df['atr'].iloc[-1]
+                # obtin atr from DF
+                self.atr = self.trade_df['atr'].iloc[-1]
 
                 # calculate risk amount
                 self.risk_amount = self.account_info['account_balance'] * self.risk_ratio
 
                 # calculate atr in pips
-                self.atr_in_pips = atr if self._symbol in \
+                self.atr_in_pips = self.atr if self._symbol in \
                                         ['AUS200', 'CHINAH', 'CN50','FRA40', \
                                         'HK50', 'JPN225', 'GER40', 'NAS100', \
                                         'SCI25', 'SPA35', 'UK100', 'US30', \
                                         'US500', 'US2000','Soybeans'] \
-                                    else atr * 10 if self._symbol in \
+                                    else self.atr * 10 if self._symbol in \
                                         [ 'GERTEC30', 'NETH25'] \
-                                    else atr * 100 if self._symbol in \
+                                    else self.atr * 100 if self._symbol in \
                                         ['USDX', 'SpotCrude', 'Cotton', 'SpotBrent'] \
-                                    else atr * 1000 if self._symbol in \
+                                    else self.atr * 1000 if self._symbol in \
                                         ['Copper'] \
-                                    else atr * 10000 if self._symbol in \
+                                    else self.atr * 10000 if self._symbol in \
                                         ['Cattle'] \
                                     else None
 
@@ -334,16 +242,18 @@ class RiskManagement():
                 self.calc_pip_value = self.risk_amount / (self.atr_in_pips * self.sl_multiplier)
 
                 #For testing purposes, Risk amount == 500
-                # self.calc_pip_value = 50 / (self.atr_in_pips * self.sl_multiplier)
+                # self.calc_pip_value = 500 / (self.atr_in_pips * self.sl_multiplier)
 
                 # calculate lot size
                 self.lot_size = self.calc_pip_value / self.pip_value
 
                 # Calculate SL & TP
-                self.stop_loss, self.take_profit = self.calc_sl_tp(atr)
+                self.stop_loss, self.take_profit = self.calc_sl_tp(self.atr)
                 
             except Exception as ex:
-                print(ex)
+                ex_str = 'Exception Type: {0} Args: \n {1!r}'
+                ex_msg = ex_str.format(type(ex).__name__,ex.args)
+                print(ex_msg)
 
 
     # calculate Stop Loss
@@ -352,10 +262,11 @@ class RiskManagement():
         """[summary]
 
         Args:
-            atr ([type]): [description]
+            atr ([float]): [ATR range from trade_df]
 
         Returns:
-            [type]: [description]
+            [float]: [SL level ]
+            [float]: [TP Level]
         """
 
         def buy_order():
@@ -371,14 +282,14 @@ class RiskManagement():
             return sl_pips, tp_pips
 
         def buy_limit_order():
-            sl_pips = self.new_trade_dict['buy_sell_limit'] - self.sl_multiplier * atr
-            tp_pips = self.new_trade_dict['buy_sell_limit'] + self.tp_multiplier * atr   
+            sl_pips = self.trade_dict['buy_sell_limit'] - self.sl_multiplier * atr
+            tp_pips = self.trade_dict['buy_sell_limit'] + self.tp_multiplier * atr
             
             return sl_pips, tp_pips
 
         def sell_limit_order():
-            sl_pips = self.new_trade_dict['buy_sell_limit'] + self.sl_multiplier * atr
-            tp_pips = self.new_trade_dict['buy_sell_limit'] - self.tp_multiplier * atr
+            sl_pips = self.trade_dict['buy_sell_limit'] + self.sl_multiplier * atr
+            tp_pips = self.trade_dict['buy_sell_limit'] - self.tp_multiplier * atr
             
             return sl_pips, tp_pips
 
@@ -388,7 +299,7 @@ class RiskManagement():
             'BUY LIMIT': buy_limit_order,
             'SELL LIMIT': sell_limit_order
         }
-        sl_pips, tp_pips = order_type.get(self.new_trade_dict['_order'])()
+        sl_pips, tp_pips = order_type.get(self.trade_dict['_order'])()
 
 
         return sl_pips, tp_pips
@@ -404,28 +315,60 @@ class RiskManagement():
         Returns:
             [bid & ask price]: [Instant bid as prices for the instrument]
         """
+        # confirm if DWXClient class in use depending on attribute availability
 
-        #USING SUBSCRIPTION REQUESTS
-        # self.zmq_dwx._DWX_MTX_SUBSCRIBE_MARKETDATA_(_symbol)
-        # time.sleep(1)
+        if hasattr(self.dwx, 'subscribe_symbols'):
 
-        # self.zmq_dwx._DWX_MTX_SEND_TRACKPRICES_REQUEST_([_symbol])
+            #Get bid & ask prices of the _symbol
+            self.dwx.subscribe_symbols([_symbol])
 
-        # #Pause to allow Market DB to be updated with recent values
-        # time.sleep(1)
+            time.sleep(0.5)
 
-        # # Get last item in the dict for the symbol
-        # _symbol_bid, _symbol_ask = list(self.zmq_dwx._Market_Data_DB[_symbol].values())[-1]
+            _symbol_bid, _symbol_ask = [self.dwx.market_data[_symbol].get(key) for key in ['bid', 'ask']]
 
-        # self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
-        # self.zmq_dwx._DWX_MTX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_()
+            return _symbol_bid, _symbol_ask
 
-        #USING INSTANT RATES REQUESTS
-        self.zmq_dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
-        time.sleep(0.05)
+        else:
+            #utilize the DWX_ZMQ Class for the market data
+            #Get bid & ask prices of the _symbol
+            self.dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
+            time.sleep(0.05)
 
-        _symbol_bid, _symbol_ask = [self.zmq_dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
+            _symbol_bid, _symbol_ask = [self.dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
 
-        return _symbol_bid, _symbol_ask
+            return _symbol_bid, _symbol_ask
 
     # Create process that monitors specific trade scenarios.
+
+
+
+###############################################
+
+# DECLARATION OF GLOBAL VARIABLES FOR THE CLASS ABOVE
+
+###############################################
+
+
+# #Major Currency pairs, where USD is the secondary currency traded.
+# #ADD commodities ie XAG, XPT, XAU
+MAJOR_CURRENCY = ('AUD', 'EUR', 'GBP', 'NZD', 'XAU', 'XAG', 'XPT', 'XPD')
+
+# # Exotic pairs whose values do not conform to typical 5 point values ie. SEK, JPY
+# #ADD all necessary pairs to be considered
+EXOTIC_CURRENCY = ('SEK', 'JPY', 'ZAR',)
+
+USD_BASED_INDICES_COMMODITIES =  (
+                'CN50', 'US30', 'US500', 'US2000', 'NAS100', 'USDX', 'SpotBrent'
+)
+
+INDICES_SECONDARY_SYMBOL = {
+                'AUS200': 'AUDUSD',
+                'CHINAH': 'USDHKD',
+                'JP225': 'USDJPY',
+                'GERTEC30': 'EURUSD', 'GER40': 'EURUSD',
+                'FRA40': 'EURUSD', 'SPA35': 'EURUSD',
+                'NETH25': 'EURUSD',
+                'UK100': 'GBPUSD',
+                'SCI25': 'USDSGD'
+                            }
+

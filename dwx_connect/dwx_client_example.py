@@ -121,7 +121,7 @@ class tick_processor():
 
 
 
-MT4_files_dir = 'C:/Users/teddy/AppData/Roaming/MetaQuotes/Terminal/3294B546D50FEEDA6BF3CFC7CF858DB7/MQL4/Files/'
+MT4_files_dir = 'C:/Users/teddy/AppData/Roaming/MetaQuotes/Terminal/73B7A2420D6397DFF9014A20F1201F97/MQL5/Files/'
 
 processor = tick_processor(MT4_files_dir)
 
