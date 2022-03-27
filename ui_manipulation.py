@@ -4,7 +4,8 @@ import sys
 import time
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PySide6.QtCore import Slot, Qt
+# from PySide6 import QtCore, QtGui, QtWidgets
+# from PySide6.QtCore import Slot, Qt
 from UI_templates import main_window
 # from dwx_MVC import DwxModel
 from dwx_connector import connect_dwx as conn_dwx
@@ -24,6 +25,7 @@ class CallUi(QtWidgets.QMainWindow):
         # Load DWX Connection Object
         # self.dwx_mvc = DwxModel()
         self.dwx, self.dwx_mvc = conn_dwx()
+        
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
@@ -117,7 +119,7 @@ class CallUi(QtWidgets.QMainWindow):
         Args:
             order_btn (QButton Object): The button that has been checked.
             Options are: SELL, BUY, SELL LIMIT, BUY LIMIT, SELL STOP, BUY STOP
-        """   
+        """
         for i in self.order_btns:
             if i != order_btn:
                 if i.isChecked():
@@ -194,12 +196,12 @@ class CallUi(QtWidgets.QMainWindow):
         """[Initiate button functions]
         """
         self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.dwx_mvc.get_trades)
-        test_hist_req_data = [
-            {'_symbol': 'EURUSD',
-            '_timeframe': 1440,
-            '_start': '2021.01.01 00:00:00',
-            '_end': pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00') }
-        ]
+        # test_hist_req_data = [
+        #     {'_symbol': 'EURUSD',
+        #     '_timeframe': 1440,
+        #     '_start': '2021.01.01 00:00:00',
+        #     '_end': pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00') }
+        # ]
         self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.dwx_mvc.send_hist_request)
         self.ui.PREPARE_NEW_TRADE_BTN.clicked.connect(self.prepare_new_trade)
         self.ui.EXECUTE_NEW_TRADE_BTN.clicked.connect(self.execute_new_trade)
@@ -297,7 +299,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() != '':
             try:
-                buy_sell_limit = int(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText())
+                buy_sell_limit = float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText())
             except Exception:
                 print('Buy/Sell Limit is not a valid Double value')
                 return
@@ -321,7 +323,6 @@ class CallUi(QtWidgets.QMainWindow):
             self.ui.STOP_LOSS_TEXT.setText(str(round(self.prep_new_trade.stop_loss, 5)))
             self.ui.TAKE_PROFIT_TEXT.setText(str(round(self.prep_new_trade.take_profit, 5)))
             self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(True)
-
         except Exception as ex:
             _exstr = "Exception Type {0}. Args:\n{1!r}"
             _msg = _exstr.format(type(ex).__name__, ex.args)
@@ -349,7 +350,7 @@ class CallUi(QtWidgets.QMainWindow):
             self.dwx_mvc.new_trade(
                 {
                 '_action': 'OPEN',
-                '_type': order_type[self.prep_new_trade.new_trade_dict['_order']],      #1 for SELL, O for BUY
+                '_type': order_type[self.prep_new_trade.trade_dict['_order']],      #1 for SELL, O for BUY
                 '_symbol': self.prep_new_trade._symbol,
                 '_price': 0.0,                  #Refers to current price value
                 # SL/TP in POINTS, not pips.
@@ -370,7 +371,6 @@ class CallUi(QtWidgets.QMainWindow):
             _exstr = "Exception Type {0}. Args:\n{1!r}"
             _msg = _exstr.format(type(ex).__name__, ex.args)
             print(_msg)
-
 
 
 def setup_window():
