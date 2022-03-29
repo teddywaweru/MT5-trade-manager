@@ -319,7 +319,7 @@ class CallUi(QtWidgets.QMainWindow):
             self.ui.ATR_IN_PIPS_TEXT.setText(str(round(self.prep_new_trade.atr_in_pips, 2)))
             self.ui.LOT_SIZE_TEXT.setText(str(str(round(self.prep_new_trade.lot_size, 2))))
             self.ui.RISK_AMOUNT_TEXT.setText(str(round(self.prep_new_trade.risk_amount, 4)))
-            self.ui.ACCOUNT_BALANCE_TEXT.setText(str(self.prep_new_trade.account_info['account_equity']))
+            self.ui.ACCOUNT_BALANCE_TEXT.setText(str(self.prep_new_trade.account_info['balance']))
             self.ui.STOP_LOSS_TEXT.setText(str(round(self.prep_new_trade.stop_loss, 5)))
             self.ui.TAKE_PROFIT_TEXT.setText(str(round(self.prep_new_trade.take_profit, 5)))
             self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(True)
@@ -343,7 +343,7 @@ class CallUi(QtWidgets.QMainWindow):
             return
 
         order_type = {
-            'SELL': 1, 'BUY': 0, 'SELL LIMIT': 2, 'BUY LIMIT': 3
+            'SELL': 1, 'BUY': 0, 'BUY LIMIT': 2, 'SELL LIMIT': 3, 
         }
 
         try:
@@ -352,9 +352,10 @@ class CallUi(QtWidgets.QMainWindow):
                 '_action': 'OPEN',
                 '_type': order_type[self.prep_new_trade.trade_dict['_order']],      #1 for SELL, O for BUY
                 '_symbol': self.prep_new_trade._symbol,
-                '_price': 0.0,                  #Refers to current price value
+                '_price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
+                     float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),                  #Refers to current price value
                 # SL/TP in POINTS, not pips.
-                '_SL': self.prep_new_trade.atr_in_pips * self.prep_new_trade.sl_multiplier * 10, 
+                '_SL': self.prep_new_trade.atr_in_pips * self.prep_new_trade.sl_multiplier * 10,
                 '_TP': self.prep_new_trade.atr_in_pips * self.prep_new_trade.tp_multiplier * 10,
                 '_comment': self.prep_new_trade.account_info,
                 '_lots': round(self.prep_new_trade.lot_size, 2),

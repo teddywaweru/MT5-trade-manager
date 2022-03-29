@@ -16,11 +16,17 @@ class DataManipulation():
 
             data_df = pd.DataFrame.from_dict(data)
 
-            data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes. dWXConn data may not have spread & real volume columns
+            data_df.drop(columns = ['spread', 'real_volume'], inplace= True) #columns contain only zeroes. dWXConn data may not have spread & real volume columns
 
         elif isinstance(data, dict):
 
             data_df = pd.DataFrame.from_dict(data, orient = 'index')
+
+        elif isinstance(data, pd.DataFrame):
+
+            data_df = data.copy(deep= True)
+
+            data_df.drop(columns=['spread', 'real_volume'], inplace= True)
 
 
 

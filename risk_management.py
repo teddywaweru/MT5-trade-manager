@@ -132,10 +132,7 @@ class RiskManagement():
                 self.atr = self.trade_df['atr'].iloc[-1]
 
                 # Calculate risk amount of the account balance
-                if hasattr(self.dwx, 'subscribe_symbols'):
-                    self.risk_amount = self.account_info['balance'] * self.risk_ratio
-                else:
-                    self.risk_amount = self.account_info['account_balance'] * self.risk_ratio
+                self.risk_amount = self.account_info['balance'] * self.risk_ratio
                 
 
 
@@ -222,7 +219,7 @@ class RiskManagement():
                 self.atr = self.trade_df['atr'].iloc[-1]
 
                 # calculate risk amount
-                self.risk_amount = self.account_info['account_balance'] * self.risk_ratio
+                self.risk_amount = self.account_info['balance'] * self.risk_ratio
 
                 # calculate atr in pips
                 self.atr_in_pips = self.atr if self._symbol in \
@@ -247,7 +244,7 @@ class RiskManagement():
                 # self.calc_pip_value = 500 / (self.atr_in_pips * self.sl_multiplier)
 
                 # calculate lot size
-                self.lot_size = self.calc_pip_value / self.pip_value
+                self.lot_size = np.round(self.calc_pip_value / self.pip_value,1)
 
                 # Calculate SL & TP
                 self.stop_loss, self.take_profit = self.calc_sl_tp(self.atr)
@@ -317,9 +314,17 @@ class RiskManagement():
         Returns:
             [bid & ask price]: [Instant bid as prices for the instrument]
         """
-        # confirm if DWXClient class in use depending on attribute availability
+        # confirm if Connection API  in use depending on attribute availability
+        # OPTIONS ARE: MT5 API, DWXConn Client, DWXZMQ connection
 
-        if hasattr(self.dwx, 'subscribe_symbols'):
+        # Priority to MT5 API
+        if hasattr(self.dwx, 'TIMEFRAME_D1'):
+            _symbol_tick_dict = self.dwx.symbol_info_tick(_symbol)._asdict()
+
+            return _symbol_tick_dict['bid'], _symbol_tick_dict['ask'] 
+
+
+        elif hasattr(self.dwx, 'subscribe_symbols'):
 
             #Get bid & ask prices of the _symbol
             self.dwx.subscribe_symbols([_symbol])

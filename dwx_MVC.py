@@ -71,26 +71,30 @@ class DwxZmqModel():
         _symbol = hist_request.get('_symbol', 'USDJPY')
         #A00 Change timestamp from daily.
         _timeframe = hist_request.get('_timeframe', 1440)           #Default to daily timeframe
-        _start = hist_request.get('_start', '2022.02.08 08:45')
-        _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H:%M'))
-        #check whether the item has valid data
-        #is pair valid
-        # is timeframe int? otherwise show 15 min data. Or other default value?
-        # Automatically select start period?
-        # No. Should be provided, but automatically selected in the application.
-        #end time would always be now.
-        self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
-        time.sleep(0.5)
 
-        #Push collected data to data manipulation
-        # to prepare DataFrames that may be utilised at any time
         #ADD able to add multiple requests???
         #create the label in the History_DB keys
         #A00 change timestamp. add try except loops
         hist_db_key = '{}_{}'.format(hist_request['_symbol'],
                                     TIMEFRAMES_PERIODS[hist_request['_timeframe']])
+        _start = hist_request.get('_start', '2022.02.08 08:45')
+        _end = hist_request.get('_end',pd.Timestamp.now().strftime('%Y.%m.%d %H:%M'))
+
+        self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
+        time.sleep(0.5)
+
+
+        if len(self.dwx._History_DB[hist_db_key]) <20:
+            _start =(
+                pd.Timestamp.now() - pd.Timedelta(minutes = (hist_request['_timeframe'] * 200))).strftime('%Y.%m.%d %H:%M:00')
+
+            self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
+            time.sleep(0.5)
+
 
         
+        #Push collected data to data manipulation
+        # to prepare DataFrames that may be utilised at any time
         #Create data manipulation object for basic Data Wrangling
         #Returns DataFrame with OHLC & atr
         hist_db_df = DataManipulation(self.dwx._History_DB[hist_db_key]).data_df
@@ -213,12 +217,9 @@ class DwxZmqModel():
         
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
-        # self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
+        #Generate History DB Key based on symbol & timeframe
         hist_db_key, trade_hist_df = self.send_hist_request(new_trade_dict)
 
-        #Generate History DB Key based on symbol & timeframe
-        #A00 Change code to work for various timeframes.
-        # hist_db_key = self.generate_hist_db_key(_symbol, 1440)
 
         #Obtain Recent Account Information. Account Balance is most critical
         #A00 Code may change when account info is stored in its own dict.
@@ -316,7 +317,7 @@ class DwxConnModel():
         #Dummy Data for testing
         #Data duration statically selected to be set to be at least 30 data points from current time
         new_trade_dict['_start'] = (
-            pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 72))).strftime('%Y.%m.%d %H:%M:00')
+            pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 30))).strftime('%Y.%m.%d %H:%M:00')
 
         new_trade_dict['_end'] = pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00')
 
