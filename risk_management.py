@@ -208,9 +208,11 @@ class RiskManagement():
                 #different currency pairs, as populated in the 
                 #INDICES_SECONDARY_SYMBOL dictionary
                 else:
-
+                    
+                    self.sec_symbol = INDICES_SECONDARY_SYMBOL.get(self._symbol)
+                    
                     self.sec_symbol_bid, self.sec_symbol_ask = \
-                        self.bid_ask_price(INDICES_SECONDARY_SYMBOL.get(self._symbol))
+                        self.bid_ask_price(self.sec_symbol)
 
                     self.pip_value = (self.sec_symbol_bid + self.sec_symbol_ask) / 2 if 'USD' in self.sec_symbol[3:] \
                         else 1 / ((self.sec_symbol_bid + self.sec_symbol_ask) / 2)
@@ -332,7 +334,7 @@ class RiskManagement():
             #utilize the DWX_ZMQ Class for the market data
             #Get bid & ask prices of the _symbol
             self.dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
-            time.sleep(0.05)
+            time.sleep(0.5)
 
             _symbol_bid, _symbol_ask = [self.dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
 
@@ -365,10 +367,10 @@ INDICES_SECONDARY_SYMBOL = {
                 'AUS200': 'AUDUSD',
                 'CHINAH': 'USDHKD',
                 'JP225': 'USDJPY',
+                'HK50': 'USDHKD',
                 'GERTEC30': 'EURUSD', 'GER40': 'EURUSD',
                 'FRA40': 'EURUSD', 'SPA35': 'EURUSD',
                 'NETH25': 'EURUSD',
                 'UK100': 'GBPUSD',
                 'SCI25': 'USDSGD'
                             }
-

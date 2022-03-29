@@ -26,21 +26,21 @@ class DataManipulation():
 
 
 
-            data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
-            '''
-            dema, ema, fwma, hma, linreg, midpoint, pwma, rma,
-                sinwma, sma, swma, t3, tema, trima, vidya, wma, zlma
-            '''
-            self.data_df = data_df
+        data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
+        '''
+        dema, ema, fwma, hma, linreg, midpoint, pwma, rma,
+            sinwma, sma, swma, t3, tema, trima, vidya, wma, zlma
+        '''
+        self.data_df = data_df
 
-        else:
-            # data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
+        # else:
+        #     # data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
 
-            data_df = data
-            data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
+        #     data_df = data
+        #     data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
 
 
-            self.data_df = data_df
+            # self.data_df = data_df
 
 
             #ATR will be included in each created DataFrame due

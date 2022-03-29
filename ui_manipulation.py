@@ -23,8 +23,8 @@ class CallUi(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
 
         # Load DWX Connection Object
-        # self.dwx_mvc = DwxModel()
-        self.dwx, self.dwx_mvc = conn_dwx()
+        # self.conn_api_mvc = DwxModel()
+        self.conn_api, self.conn_api_mvc = conn_dwx()
         
 
         # Create Main UI Instance
@@ -195,14 +195,14 @@ class CallUi(QtWidgets.QMainWindow):
     def setup_btn_connect(self):
         """[Initiate button functions]
         """
-        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.dwx_mvc.get_trades)
+        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_trades)
         # test_hist_req_data = [
         #     {'_symbol': 'EURUSD',
         #     '_timeframe': 1440,
         #     '_start': '2021.01.01 00:00:00',
         #     '_end': pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00') }
         # ]
-        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.dwx_mvc.send_hist_request)
+        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.conn_api_mvc.send_hist_request)
         self.ui.PREPARE_NEW_TRADE_BTN.clicked.connect(self.prepare_new_trade)
         self.ui.EXECUTE_NEW_TRADE_BTN.clicked.connect(self.execute_new_trade)
 
@@ -313,7 +313,7 @@ class CallUi(QtWidgets.QMainWindow):
             'buy_sell_limit': buy_sell_limit
         }
         try:
-            self.prep_new_trade = self.dwx_mvc.prepare_new_trade(new_trade_dict)
+            self.prep_new_trade = self.conn_api_mvc.prepare_new_trade(new_trade_dict)
 
             self.ui.PIP_VALUE_TEXT.setText(str(round(self.prep_new_trade.pip_value, 4)))
             self.ui.ATR_IN_PIPS_TEXT.setText(str(round(self.prep_new_trade.atr_in_pips, 2)))
@@ -347,7 +347,7 @@ class CallUi(QtWidgets.QMainWindow):
         }
 
         try:
-            self.dwx_mvc.new_trade(
+            self.conn_api_mvc.new_trade(
                 {
                 '_action': 'OPEN',
                 '_type': order_type[self.prep_new_trade.trade_dict['_order']],      #1 for SELL, O for BUY

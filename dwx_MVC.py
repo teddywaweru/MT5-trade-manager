@@ -5,7 +5,7 @@ Returns:
 """
 
 
-from os.path import exists
+# from os.path import exists
 import time
 # from PySide6.QtCore import Slot, Qt
 # import sys
@@ -15,7 +15,7 @@ import time
 
 # from PyQt5 import QtCore, QtGui, QtWidgets
 #DWX_ZeroMQ Connector
-from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx_zmq
+# from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx_zmq
 
 #DWXConnect API
 # from dwx_connect.api.dwx_client import dwx_client as dwx_conn
@@ -80,7 +80,7 @@ class DwxZmqModel():
         # No. Should be provided, but automatically selected in the application.
         #end time would always be now.
         self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, _timeframe, _start, _end)
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         #Push collected data to data manipulation
         # to prepare DataFrames that may be utilised at any time
@@ -238,7 +238,7 @@ class DwxZmqModel():
                                         hist_db_key)
 
         self.new_trade_risk.calc_lot()
-        # return new_trade
+        return self.new_trade_risk
 
     # Create History Label
     def generate_hist_db_key(self, _symbol, _timeframe):
@@ -269,9 +269,11 @@ class DwxConnModel():
 
         self.periods = TIMEFRAMES_PERIODS
 
-        self.curr_mtl_pairs = CURRENCY_METAL_PAIRS
+        self.new_trade_risk = None
 
-        self.comm_indcs = COMMODITIES_INDICES
+        # self.curr_mtl_pairs = CURRENCY_METAL_PAIRS
+
+        # self.comm_indcs = COMMODITIES_INDICES
     
     #Subscribe to list of trading instruments
     # @Slot()
@@ -341,15 +343,15 @@ class DwxConnModel():
         #Initiate  Risk Management Class
         # account balance
         # symbol
-        new_trade = RiskManagement(self.dwx,
+        self.new_trade_risk = RiskManagement(self.dwx,
                                         new_trade_dict,             # New Trade details
                                         0.0095,                      # Percentage risk of account
                                         account_info,
                                         trade_hist_df,
                                         hist_db_key)
-        new_trade.calc_lot()
+        self.new_trade_risk.calc_lot()
 
-        return new_trade
+        return self.new_trade_risk
 
 
     # @Slot()
