@@ -139,10 +139,8 @@ class RiskManagement():
                 # Calculate ATR in pip value for the pair
                 # Variations are dependent on how the ATR is calculated for
                 # the _symbol
-                self.atr_in_pips = self.atr if self._symbol[:3] in \
-                                ['XPT'] \
-                            else self.atr * 10 if self._symbol[:3] in \
-                                ['XAU', 'XPD'] \
+                self.atr_in_pips = self.atr * 10 if self._symbol[:3] in \
+                                ['XAU', 'XPD','XPT'] \
                             else self.atr * 100 if self._symbol[:3] in \
                                 ['XAG'] \
                                     or self._symbol[3:] in \
@@ -244,10 +242,14 @@ class RiskManagement():
                 # self.calc_pip_value = 500 / (self.atr_in_pips * self.sl_multiplier)
 
                 # calculate lot size
-                self.lot_size = np.round(self.calc_pip_value / self.pip_value,1)
+                self.lot_size = np.round(self.calc_pip_value / self.pip_value, 1) * 10 if \
+                                    self._symbol in ['NETH25'] \
+                                    else np.round(self.calc_pip_value / self.pip_value, 1)
+
 
                 # Calculate SL & TP
                 self.stop_loss, self.take_profit = self.calc_sl_tp(self.atr)
+                pass
                 
             except Exception as ex:
                 ex_str = 'Exception Type: {0} Args: \n {1!r}'

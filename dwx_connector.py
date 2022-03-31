@@ -39,10 +39,10 @@ def connect_dwx():
     """_summary_
     """
     if mt5.initialize():
-        return mt5, mt5_conn.Mt5Mvc(mt5)
+    #     return mt5, mt5_conn.Mt5Mvc(mt5)
 
 
-    else:
+    # else:
         print('MT5 has not been initialized.')
         mt5.shutdown()
         #Iterate through the list of platform folders

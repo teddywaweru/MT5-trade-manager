@@ -7,6 +7,7 @@ Returns:
 
 # from os.path import exists
 import time
+from math import ceil
 # from PySide6.QtCore import Slot, Qt
 # import sys
 
@@ -119,7 +120,8 @@ class DwxZmqModel():
             new_trade_dict ([type]): [description]
             modify_dict ([type]): [description]
         """
-        #A00 move calculations of SL & TP to risk_management.py
+        #Convert order type to MT4 Format
+        new_trade['_type'] = MT4_ORDER_TYPE[new_trade['_type']]
         
         if modif_trade['trade_strategy'] == 'SINGLE TRADE':
             self.dwx._DWX_MTX_NEW_TRADE_(new_trade)
@@ -127,7 +129,7 @@ class DwxZmqModel():
         elif modif_trade['trade_strategy'] == '2-WAY SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1.update(
-                {'_lots': new_trade['_lots'] * modif_trade['split_ratio'],}
+                {'_lots': ceil((new_trade['_lots'] * modif_trade['split_ratio'] *10))/10,}
                 
             )
 
@@ -225,7 +227,7 @@ class DwxZmqModel():
         #A00 Code may change when account info is stored in its own dict.
         # For now, this is collected from the thread data output dict.
         self.dwx._DWX_MTX_GET_ACCOUNT_INFO_()
-        time.sleep(0.3)
+        time.sleep(1)
         account_info = self.dwx._thread_data_output
 
         #Initiate  Risk Management Class
@@ -447,3 +449,7 @@ COMMODITIES_INDICES = (
                 'SpotCrude', 'Cattle', 'Cotton', 'Copper', 'OrangeJuice',
                 'Soybeans', 'SpotBrent'
                 )
+
+MT4_ORDER_TYPE = {
+            'SELL': 1, 'BUY': 0, 'BUY LIMIT': 2, 'SELL LIMIT': 3, 
+        }

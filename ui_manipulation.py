@@ -342,15 +342,11 @@ class CallUi(QtWidgets.QMainWindow):
             print('Select a trading strategy.')
             return
 
-        order_type = {
-            'SELL': 1, 'BUY': 0, 'BUY LIMIT': 2, 'SELL LIMIT': 3, 
-        }
-
         try:
             self.conn_api_mvc.new_trade(
                 {
                 '_action': 'OPEN',
-                '_type': order_type[self.prep_new_trade.trade_dict['_order']],      #1 for SELL, O for BUY
+                '_type': self.prep_new_trade.trade_dict['_order'],      #1 for SELL, O for BUY
                 '_symbol': self.prep_new_trade._symbol,
                 '_price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
                      float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),                  #Refers to current price value
