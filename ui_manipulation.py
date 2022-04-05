@@ -2,6 +2,7 @@
 """
 import sys
 import time
+print('{}: Start of Loading UI Manipulation Imports'.format(time.time()))
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 # from PySide6 import QtCore, QtGui, QtWidgets
@@ -11,6 +12,9 @@ from UI_templates import main_window
 from dwx_connector import connect_dwx as conn_dwx
 from table_MVC import TableModel
 import pandas as pd
+import asyncio
+
+print('{}: Start of Loading UI Manipulation Code'.format(time.time()))
 
 
 class CallUi(QtWidgets.QMainWindow):
@@ -24,7 +28,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         # Load DWX Connection Object
         # self.conn_api_mvc = DwxModel()
-        self.conn_api, self.conn_api_mvc = conn_dwx()
+        self.conn_api, self.conn_api_mvc = asyncio.run(conn_dwx())
         
 
         # Create Main UI Instance
@@ -98,7 +102,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         Args:
             instr_combobox (combobox Object): Combobox object that created the signal
-        """  
+        """
         #Disable the Execute button.      
         self.disable_execute_trade_btn()
 
@@ -249,7 +253,7 @@ class CallUi(QtWidgets.QMainWindow):
 
     def setup_combobox_connect(self):
         """_summary_
-        """   
+        """
 
         self.ui.COMMS_INDCS_COMBOBOX.currentTextChanged.connect(
             lambda: self.combobox_text_changed(self.ui.COMMS_INDCS_COMBOBOX)

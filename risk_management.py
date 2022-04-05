@@ -140,7 +140,7 @@ class RiskManagement():
                 # Variations are dependent on how the ATR is calculated for
                 # the _symbol
                 self.atr_in_pips = self.atr * 10 if self._symbol[:3] in \
-                                ['XAU', 'XPD','XPT'] \
+                                ['XAU','XPD','XPT'] \
                             else self.atr * 100 if self._symbol[:3] in \
                                 ['XAG'] \
                                     or self._symbol[3:] in \
@@ -163,6 +163,8 @@ class RiskManagement():
                 # 0.1 refers to the lot size for a self.pip_value
                 self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01 if \
                                 self._symbol[3:] in ['JPY'] \
+                            else 0.1 * self.calc_pip_value/ self.pip_value * 100 if \
+                                self._symbol[:3] in ['XAU'] \
                             else 0.1 * self.calc_pip_value / self.pip_value if \
                                 self._symbol[:3] in \
                                 ['XAU', 'XAG', 'XPD', 'XPT', \

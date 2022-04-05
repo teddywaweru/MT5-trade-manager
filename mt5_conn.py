@@ -94,7 +94,7 @@ class Mt5Mvc():
         #Get historical rates for the _symbol
         hist_rates = self.mt5_mvc.copy_rates_range(_symbol, eval(_timeframe), _start, _end)
 
-        time.sleep(0.5)
+        time.sleep(1)
 
 
         hist_db_df = pd.DataFrame(hist_rates)
@@ -124,13 +124,28 @@ class Mt5Mvc():
         #MT5 API has different definitions for some of the dict parameters for a
         # new trade, which shall be changed
 
+        symbol_info = self.mt5_mvc.symbol_info(new_trade['_symbol'])._asdict()
+
         trade_action = '{}.{}'.format(MT5_OBJ_STRING, MT5_TRADE_ACTIONS['instant'])\
                             if new_trade['_price'] == 0 else \
                             '{}.{}'.format(MT5_OBJ_STRING, MT5_TRADE_ACTIONS['pending'])
 
+        new_trade['price'] =  symbol_info['ask'] if trade_action == 'mt5.TRADE_ACTION_DEAL' \
+            else new_trade['_price']
+
         trade_type = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPES[new_trade['_type']])
 
-        symbol_info = self.mt5_mvc.symbol_info(new_trade['_symbol'])._asdict()
+        new_trade['sl'] = symbol_info['ask'] - new_trade['_SL'] * symbol_info['point'] \
+            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else symbol_info['ask'] + new_trade['_SL'] * symbol_info['point']
+
+        new_trade['tp'] = symbol_info['ask'] + new_trade['_TP'] * symbol_info['point'] \
+            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else symbol_info['ask'] - new_trade['_TP'] * symbol_info['point']
+
+        new_trade['scale_tp'] = symbol_info['ask'] + 5 * new_trade['_TP'] * symbol_info['point'] \
+            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else symbol_info['ask'] - 5 * new_trade['_TP'] * symbol_info['point']
 
         type_filling = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']])
 
@@ -144,22 +159,11 @@ class Mt5Mvc():
 
                 'type': eval(trade_type),
 
-                'price': symbol_info['ask'],
-
-                # 'sl': 100,
-                'sl': symbol_info['ask'] + new_trade['_SL'] * symbol_info['point'],
-
-                # 'tp': 100,
-                'tp': symbol_info['ask'] - new_trade['_TP'] * symbol_info['point'],
-
                 'deviation': 20,
 
-                # 'type_filling': eval('{}.ORDER_FILLING_RETURN'.format(MT5_OBJ_STRING)),
                 'type_filling': eval(type_filling),
 
                 # 'type_time': eval('{}.ORDER_TIME_GTC'.format(MT5_OBJ_STRING)),
-                # 'type_time': symbol_info['start_time'],
-                # 'type_time': 1,
 
                 # 'expiration': symbol_info['expiration_time']
 
@@ -176,13 +180,14 @@ class Mt5Mvc():
         elif modif_trade['trade_strategy'] == '2-WAY SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1.update(
-                {'volume': ceil((new_trade['volume'] * modif_trade['split_ratio'] *100))/100,}
+                {'volume': ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10,}
             )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2.update(
                 {'volume': new_trade['volume'] - new_trade_1['volume'],
-                'tp': new_trade['tp'] * 5}
+                'tp': new_trade['scale_tp']
+                }
 
             )
 

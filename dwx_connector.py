@@ -7,14 +7,16 @@ dwx_connect EA over the dwx_zmq EA.
 """
 
 # pylint: disable=no-member
-
+import time
 from os.path import exists
-
+print('{}: Started loading dwx_connector file'.format(time.time()))
 # Load the dwx_zmq object
-from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx_zmq
-
 # Load the dwx_connect object
 from dwx_connect.api.dwx_client import dwx_client
+
+print('{}: Finished loading DWX cONN Imports'.format(time.time()))
+from dwx_zmq.DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector as dwx_zmq
+print('{}: Finished loading DWX_ZeroMQ cONN Imports'.format(time.time()))
 
 import dwx_MVC
 
@@ -35,14 +37,14 @@ FOLDERS_LIST = [
 # 1. MT5 API
 # 2. DWX Client Connect MT5
 # 3. DWX_ZMQ Client MT4
-def connect_dwx():
+async def connect_dwx():
     """_summary_
     """
     if mt5.initialize():
-    #     return mt5, mt5_conn.Mt5Mvc(mt5)
+        return mt5, mt5_conn.Mt5Mvc(mt5)
 
 
-    # else:
+    else:
         print('MT5 has not been initialized.')
         mt5.shutdown()
         #Iterate through the list of platform folders
