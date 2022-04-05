@@ -126,26 +126,34 @@ class Mt5Mvc():
 
         symbol_info = self.mt5_mvc.symbol_info(new_trade['_symbol'])._asdict()
 
+        time.sleep(0.5)
+
         trade_action = '{}.{}'.format(MT5_OBJ_STRING, MT5_TRADE_ACTIONS['instant'])\
                             if new_trade['_price'] == 0 else \
                             '{}.{}'.format(MT5_OBJ_STRING, MT5_TRADE_ACTIONS['pending'])
 
-        new_trade['price'] =  symbol_info['ask'] if trade_action == 'mt5.TRADE_ACTION_DEAL' \
-            else new_trade['_price']
-
         trade_type = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPES[new_trade['_type']])
 
-        new_trade['sl'] = symbol_info['ask'] - new_trade['_SL'] * symbol_info['point'] \
-            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else symbol_info['ask'] + new_trade['_SL'] * symbol_info['point']
+        if trade_action == 'self.mt5_mvc.TRADE_ACTION_DEAL':
+            new_trade['price'] =  symbol_info['ask'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_BUY' else \
+                                symbol_info['bid'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_SELL' else \
+                                None
 
-        new_trade['tp'] = symbol_info['ask'] + new_trade['_TP'] * symbol_info['point'] \
-            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else symbol_info['ask'] - new_trade['_TP'] * symbol_info['point']
+        else:
+            new_trade['price'] = new_trade['_price']
 
-        new_trade['scale_tp'] = symbol_info['ask'] + 5 * new_trade['_TP'] * symbol_info['point'] \
+
+        new_trade['sl'] = new_trade['price'] - new_trade['_SL'] * symbol_info['point'] \
             if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else symbol_info['ask'] - 5 * new_trade['_TP'] * symbol_info['point']
+                else new_trade['price'] + new_trade['_SL'] * symbol_info['point']
+
+        new_trade['tp'] = new_trade['price'] + new_trade['_TP'] * symbol_info['point'] \
+            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] - new_trade['_TP'] * symbol_info['point']
+
+        new_trade['scale_tp'] = new_trade['price'] + 5 * new_trade['_TP'] * symbol_info['point'] \
+            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] - 5 * new_trade['_TP'] * symbol_info['point']
 
         type_filling = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']])
 
@@ -269,9 +277,15 @@ CURRENCY_METAL_PAIRS = (
                 )
 
 COMMODITIES_INDICES = (
-                'AUS200', 'CHINAH', 'CN50', 'FRA40', 'HK50', 'NAS100',
-                'GER40', 'GERTEC30', 'NETH25', 'SCI25', 'SPA35','UK100',
-                'US30', 'US500', 'US2000', 'USDX',
+                'AUS200',
+                'CHINAH', 'HK50',
+                'CN50',
+                'JPN225',
+                'EUSTX50', 'GER40', 'GERTEC30', 'NETH25', 'SCI25', 'SPA35', 'FRA40',
+                'SWI20',
+                'UK100',
+                'US30', 'US500', 'US2000', 'USDX', 'NAS100',
+                'CA60',
                 'SpotCrude', 'Cattle', 'Cotton', 'Copper', 'OrangeJuice',
                 'Soybeans', 'SpotBrent'
                 )

@@ -379,7 +379,10 @@ INDICES_SECONDARY_SYMBOL = {
                 'HK50': 'USDHKD',
                 'GERTEC30': 'EURUSD', 'GER40': 'EURUSD',
                 'FRA40': 'EURUSD', 'SPA35': 'EURUSD',
-                'NETH25': 'EURUSD',
+                'NETH25': 'EURUSD', 'EUSTX50':'EURUSD',
                 'UK100': 'GBPUSD',
-                'SCI25': 'USDSGD'
+                'SCI25': 'USDSGD',
+                'JPN225':'USDJPY',
+                'SWI20':'USDCHF',
+                'CA60': 'USDCAD'
                             }
