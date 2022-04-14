@@ -14,6 +14,11 @@ class TableModel(QtCore.QAbstractTableModel):
         super(TableModel,self).__init__()
         self._data = data
 
+    def headerData(self, section, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self._data.columns[section]
+        return super().headerData(section, orientation, role)
+
     def data(self,index,role):
         if role == Qt.ItemDataRole.DisplayRole:
             if isinstance(self._data, list):

@@ -103,6 +103,8 @@ class DwxZmqModel():
         return hist_db_key, hist_db_df
 
 
+    def get_current_trades(self):
+        pass
 
     # Close all trades
     # @Slot()
@@ -278,6 +280,15 @@ class DwxConnModel():
 
         # self.comm_indcs = COMMODITIES_INDICES
     
+
+
+
+
+
+    def get_current_trades(self):
+        pass
+
+    
     #Subscribe to list of trading instruments
     # @Slot()
     def subscribe_marketdata(self, list_of_pairs):
@@ -432,9 +443,9 @@ CURRENCY_METAL_PAIRS = (
                 'CHFJPY','CHFSGD',
                 'EURAUD','EURCAD','EURCHF', 'EURGBP', 'EURJPY',\
                     'EURNZD', 'EURSGD', 'EURUSD',
-                'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD',\
+                'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNOK', 'GBPNZD', 'GBPSEK',\
                     'GBPSGD', 'GBPUSD',
-                'NOKSEK',
+                'NOKSEK', 'NOKJPY',
                 'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD',
                 'SEKJPY',
                 'SGDJPY',

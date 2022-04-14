@@ -61,7 +61,7 @@ class Mt5Mvc():
         # symbol
         self.new_trade_risk = RiskManagement(self.mt5_mvc,
                                         new_trade_dict,             # New Trade details
-                                        0.0095,                      # Percentage risk of account
+                                        0.02,                      # Percentage risk of account
                                         account_info,
                                         trade_hist_df,
                                         hist_db_key)
@@ -96,6 +96,19 @@ class Mt5Mvc():
 
         time.sleep(1)
 
+        n = 1
+        while len(hist_rates) < 30:
+            #Data duration statically selected to be set to be at least 30 data points from current time
+            hist_request['_start'] = (
+                pd.Timestamp.now() - pd.Timedelta(minutes = (hist_request['_timeframe'] * 48 * n)))
+
+            n += 1
+            _start = hist_request.get('_start', None)
+
+            #Get historical rates for the _symbol
+            hist_rates = self.mt5_mvc.copy_rates_range(_symbol, eval(_timeframe), _start, _end)
+
+
 
         hist_db_df = pd.DataFrame(hist_rates)
 
@@ -109,8 +122,14 @@ class Mt5Mvc():
 
         return hist_db_key, hist_db_df
 
-    def get_trades(self):
-        pass
+    def get_current_trades(self):
+        open_positions = self.mt5_mvc.positions_get()
+
+        open_positions_list = [i._asdict() for i in open_positions]
+
+        open_positions_df = pd.DataFrame(open_positions_list)
+
+        return open_positions_df
 
 
     def new_trade(self, new_trade, modif_trade):
@@ -142,6 +161,13 @@ class Mt5Mvc():
         else:
             new_trade['price'] = new_trade['_price']
 
+        #Modify Split Ratio based on instrument to be traded.
+        if new_trade['_symbol'] in CURRENCY_METAL_PAIRS:
+            modif_trade['split_ratio'] = 0.5
+        elif new_trade['_symbol'] in COMMODITIES_INDICES:
+            modif_trade['split_ratio'] = 0.8
+        
+        
 
         new_trade['sl'] = new_trade['price'] - new_trade['_SL'] * symbol_info['point'] \
             if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
@@ -151,7 +177,7 @@ class Mt5Mvc():
             if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
                 else new_trade['price'] - new_trade['_TP'] * symbol_info['point']
 
-        new_trade['scale_tp'] = new_trade['price'] + 5 * new_trade['_TP'] * symbol_info['point'] \
+        new_trade['scaling_tp'] = new_trade['price'] + 5 * new_trade['_TP'] * symbol_info['point'] \
             if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
                 else new_trade['price'] - 5 * new_trade['_TP'] * symbol_info['point']
 
@@ -187,14 +213,25 @@ class Mt5Mvc():
 
         elif modif_trade['trade_strategy'] == '2-WAY SPLIT TRADE':
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
-            new_trade_1.update(
-                {'volume': ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10,}
-            )
+            new_trade_1['volume'] = ceil((new_trade['volume'] * modif_trade['split_ratio'] *100))/100 if \
+                    new_trade['symbol'] in CURRENCY_METAL_PAIRS \
+                    else ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10 if \
+                    new_trade['symbol'] in COMMODITIES_INDICES \
+                        else None
+
+            # new_trade_1.update(
+            #     {'volume': ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10,}
+            # )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
+            new_trade_2['volume'] = ceil((new_trade['volume'] - new_trade_1['volume']) *100)/100 if \
+                    new_trade['symbol'] in CURRENCY_METAL_PAIRS \
+                    else ceil((new_trade['volume'] - new_trade_1['volume']) *10)/10 if \
+                    new_trade['symbol'] in COMMODITIES_INDICES \
+                        else None
             new_trade_2.update(
-                {'volume': new_trade['volume'] - new_trade_1['volume'],
-                'tp': new_trade['scale_tp']
+                {
+                'tp': new_trade['scaling_tp']
                 }
 
             )
@@ -266,9 +303,9 @@ CURRENCY_METAL_PAIRS = (
                 'CHFJPY','CHFSGD',
                 'EURAUD','EURCAD','EURCHF', 'EURGBP', 'EURJPY',\
                     'EURNZD', 'EURSGD', 'EURUSD',
-                'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD',\
+                'GBPAUD','GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNOK', 'GBPNZD', 'GBPSEK',\
                     'GBPSGD', 'GBPUSD',
-                'NOKSEK',
+                'NOKSEK', 'NOKJPY',
                 'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD',
                 'SEKJPY',
                 'SGDJPY',

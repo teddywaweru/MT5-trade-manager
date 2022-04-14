@@ -43,6 +43,8 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.setup_combobox_connect()
 
+        self.load_trades()
+
         #New Prepared Trade Object
         self.prep_new_trade = None
 
@@ -71,24 +73,29 @@ class CallUi(QtWidgets.QMainWindow):
             ]
 
 
+        # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
+            # print(True)
 
 
         #ADD textlabel function to be loaded, similar to setupBtnconnect
         # also for text edits,
         #writing functions instead of loading in the __init__ will make the code more organized.
 
-        data = [
-            [4, 9, 2],
-            [1, 0, 0],
-            [3, 5, 0],
-            [3, 3, 2],
-            [7, 8, 9],
-        ]
+        # data = [
+        #     [4, 9, 2],
+        #     [1, 0, 0],
+        #     [3, 5, 0],
+        #     [3, 3, 2],
+        #     [7, 8, 9],
+        # ]
 
-        data = pd.DataFrame(data)
+        # data = pd.DataFrame(data)
 
-        self.table_model = TableModel(data)
-        self.ui.tableView.setModel(self.table_model)
+        # self.table_model = TableModel(data)
+        # self.ui.tableView.setModel(self.table_model)
+    def load_trades(self):
+        trades = self.conn_api_mvc.get_current_trades()
+        self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
 
 
     def disable_execute_trade_btn(self):
@@ -199,7 +206,7 @@ class CallUi(QtWidgets.QMainWindow):
     def setup_btn_connect(self):
         """[Initiate button functions]
         """
-        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_trades)
+        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_current_trades)
         # test_hist_req_data = [
         #     {'_symbol': 'EURUSD',
         #     '_timeframe': 1440,
@@ -248,6 +255,7 @@ class CallUi(QtWidgets.QMainWindow):
         )
 
 
+
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
 
@@ -262,6 +270,8 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.combobox_text_changed(self.ui.CURRENCY_PAIRS_METALS_COMBOBOX)
         )
 
+    def trade_selection_changed(self):
+        print(True)
 
     def prepare_new_trade(self):
         """[summary]
@@ -327,14 +337,39 @@ class CallUi(QtWidgets.QMainWindow):
             self.ui.STOP_LOSS_TEXT.setText(str(round(self.prep_new_trade.stop_loss, 5)))
             self.ui.TAKE_PROFIT_TEXT.setText(str(round(self.prep_new_trade.take_profit, 5)))
             self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(True)
+
+            hist_df = self.prep_new_trade.trade_df
+
+            # hist_table = TableModel(hist_df)
+
+            # model = QtGui.QStandardItemModel()
+            # model.setHorizontalHeaderLabels(hist_df.columns)
+
+            
+
+
+            # self.ui.HIST_DF_TABLE.setHorizontalHeader([1,2,3,4])
+            # self.ui.HIST_DF_TABLE.setHorizontalHeader([i for i in hist_df.columns if i not in ['Index']])
+            # self.ui.HIST_DF_TABLE.setHorizontalHeader(model)
+
+            # self.ui.HIST_DF_TABLE.setVisible(True)
+            self.ui.HIST_DF_TABLE.setModel(TableModel(hist_df))
+
+
+
         except Exception as ex:
             _exstr = "Exception Type {0}. Args:\n{1!r}"
             _msg = _exstr.format(type(ex).__name__, ex.args)
             print(_msg)
 
+
+
     def execute_new_trade(self):
         """[summary]
         """
+
+        self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(False)
+
         trade_strategy = ''
         #iterate to select the trade strategy that is selected.
         #split the trade, or make a single order
