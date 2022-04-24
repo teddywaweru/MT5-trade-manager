@@ -55,22 +55,22 @@ class CallUi(QtWidgets.QMainWindow):
         ]
 
         #List of Order Strategy buttons. For iterations
-        self.order_strategy_btns = [
+        self.order_strategy_btns = (
             self.ui.SINGLE_TRADE_BTN,
             self.ui.MINIMAL_TRADE_BTN,
             self.ui.TWO_WAY_SPLIT_TRADE_BTN,
             self.ui.THREE_WAY_SPLIT_TRADE_BTN
-        ]
+        )
 
         #List of Timeframe buttons. For iterations
-        self.order_timeframe_btns = [
-            self.ui.MIN_1440_BTN, self.ui.MIN_30_BTN, self.ui.MIN_60_BTN
-            ]
+        self.order_timeframe_btns = (
+            self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
+        )
 
         #ist of instrument comboboxes. For iterations
-        self.instr_comboboxes = [
+        self.instr_comboboxes = (
             self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
-            ]
+            )
 
 
         # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
@@ -94,6 +94,9 @@ class CallUi(QtWidgets.QMainWindow):
         # self.table_model = TableModel(data)
         # self.ui.tableView.setModel(self.table_model)
     def load_trades(self):
+        """
+        _summary_
+        """        
         trades = self.conn_api_mvc.get_current_trades()
         self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
 
@@ -240,6 +243,10 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.ui.MINIMAL_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN)
+        )
+
+        self.ui.MIN_5_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
         )
 
         self.ui.MIN_30_BTN.clicked.connect(

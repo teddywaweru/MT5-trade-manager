@@ -42,6 +42,9 @@ class RiskManagement():
 
         self._timeframe = hist_db_key.partition('_')[2] #Partitioning the symbol EURUSD_D1 to obtain timeframe
 
+        self._symbol_info = self.dwx.symbol_info(self._symbol)._asdict() if hasattr(self.dwx, 'symbol_info') \
+                                else None
+
         self._symbol_bid = None
 
         self._symbol_ask = None
@@ -69,6 +72,8 @@ class RiskManagement():
         self.stop_loss = None
 
         self.take_profit = None
+
+        
 
 
 
@@ -202,7 +207,7 @@ class RiskManagement():
                     self.pip_value = 1
                 
                 # ELSE remaining list of indices & commodities are based on
-                #different currency pairs, as populated in the 
+                #different currency pairs, as populated in the
                 #INDICES_SECONDARY_SYMBOL dictionary
                 else:
                     
@@ -217,9 +222,14 @@ class RiskManagement():
 
                 # obtin atr from DF
                 self.atr = self.trade_df['atr'].iloc[-1]
+                
+                self.atr += self._symbol_info['spread'] * self._symbol_info['point']
 
                 # calculate risk amount
                 self.risk_amount = self.account_info['balance'] * self.risk_ratio
+                
+                #For testing at different account sizes
+                # self.risk_amount = 100000 * self.risk_ratio
 
                 # calculate atr in pips
                 self.atr_in_pips = self.atr if self._symbol in \
