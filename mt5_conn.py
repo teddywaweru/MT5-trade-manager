@@ -197,6 +197,8 @@ class Mt5Mvc():
 
                 'type_filling': eval(type_filling),
 
+                'comment': new_trade['_comment']
+
                 # 'type_time': eval('{}.ORDER_TIME_GTC'.format(MT5_OBJ_STRING)),
 
                 # 'expiration': symbol_info['expiration_time']

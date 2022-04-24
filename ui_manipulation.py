@@ -261,7 +261,21 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
         )
 
+        self.ui.CURRENT_TRADES_TABLE.doubleClicked.connect(self.clicked_table)
 
+
+    def clicked_table(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        idx = self.ui.CURRENT_TRADES_TABLE.selectedIndexes()[0]
+        print(idx)
+        id_us = int(self.ui.CURRENT_TRADES_TABLE.model().data(idx,0))
+        print(id_us)
+
+        return True
 
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
@@ -399,7 +413,7 @@ class CallUi(QtWidgets.QMainWindow):
                 # SL/TP in POINTS, not pips.
                 '_SL': self.prep_new_trade.atr_in_pips * self.prep_new_trade.sl_multiplier * 10,
                 '_TP': self.prep_new_trade.atr_in_pips * self.prep_new_trade.tp_multiplier * 10,
-                '_comment': self.prep_new_trade.account_info,
+                '_comment': self.ui.NEW_TRADE_COMMENT_VALUE.toPlainText(),
                 '_lots': round(self.prep_new_trade.lot_size, 2),
                 '_magic': 123456,
                 '_ticket': 0
