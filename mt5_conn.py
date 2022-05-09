@@ -60,11 +60,12 @@ class Mt5Mvc():
         # account balance
         # symbol
         self.new_trade_risk = RiskManagement(self.mt5_mvc,
-                                        new_trade_dict,             # New Trade details
-                                        0.02,                      # Percentage risk of account
-                                        account_info,
-                                        trade_hist_df,
-                                        hist_db_key)
+                                        new_trade_dict= new_trade_dict,             # New Trade details
+                                        risk_ratio= None,
+                                        account_info= account_info,
+                                        new_trade_df= trade_hist_df,
+                                        hist_db_key= hist_db_key)
+
 
         self.new_trade_risk.calc_lot()
         return self.new_trade_risk
@@ -323,11 +324,15 @@ COMMODITIES_INDICES = (
                 'EUSTX50', 'GER40', 'GERTEC30', 'NETH25', 'SCI25', 'SPA35', 'FRA40',
                 'SWI20',
                 'UK100',
-                'US30', 'US500', 'US2000', 'USDX', 'NAS100',
+                'US30', 'US500', 'US2000', 'USDX', 'NAS100', 'US100',
                 'CA60',
                 'SpotCrude', 'Cattle', 'Cotton', 'Copper', 'OrangeJuice',
                 'Soybeans', 'SpotBrent'
                 )
+
+ALT_COMMODITIES_INDICIES= {
+    'NAS100': ''
+}
 
 # MT5 Syntax requires instances where a string is required for eval() functions
 MT5_OBJ_STRING = 'self.mt5_mvc'

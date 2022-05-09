@@ -237,7 +237,6 @@ class DwxZmqModel():
         # symbol
         self.new_trade_risk = RiskManagement(self.dwx,
                                         new_trade_dict,             # New Trade details
-                                        0.0095,                      # Percentage risk of account
                                         account_info['_data'][-1],
                                         trade_hist_df,
                                         hist_db_key)
