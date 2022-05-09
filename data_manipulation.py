@@ -16,31 +16,37 @@ class DataManipulation():
 
             data_df = pd.DataFrame.from_dict(data)
 
-            data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes. dWXConn data may not have spread & real volume columns
+            data_df.drop(columns = ['spread', 'real_volume'], inplace= True) #columns contain only zeroes. dWXConn data may not have spread & real volume columns
 
         elif isinstance(data, dict):
 
             data_df = pd.DataFrame.from_dict(data, orient = 'index')
 
+        elif isinstance(data, pd.DataFrame):
+
+            data_df = data.copy(deep= True)
+
+            data_df.drop(columns=['spread', 'real_volume'], inplace= True)
 
 
 
 
-            data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
-            '''
-            dema, ema, fwma, hma, linreg, midpoint, pwma, rma,
-                sinwma, sma, swma, t3, tema, trima, vidya, wma, zlma
-            '''
-            self.data_df = data_df
 
-        else:
-            # data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
+        data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
+        '''
+        dema, ema, fwma, hma, linreg, midpoint, pwma, rma,
+            sinwma, sma, swma, t3, tema, trima, vidya, wma, zlma
+        '''
+        self.data_df = data_df
 
-            data_df = data
-            data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
+        # else:
+        #     # data_df = data_df.drop(columns = ['spread', 'real_volume']) #columns contain only zeroes
+
+        #     data_df = data
+        #     data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
 
 
-            self.data_df = data_df
+            # self.data_df = data_df
 
 
             #ATR will be included in each created DataFrame due

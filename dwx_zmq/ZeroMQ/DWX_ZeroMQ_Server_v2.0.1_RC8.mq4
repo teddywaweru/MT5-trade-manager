@@ -760,12 +760,12 @@ void DWX_GetAccountInformation(string& compArray[], string& zmq_ret){
    zmq_ret += "'_action': 'GET_ACCOUNT_INFORMATION', 'account_number':" +IntegerToString(AccountNumber());
    zmq_ret += ", '_data': [{";
    zmq_ret += "'current_time': '" + TimeToString(TimeCurrent()) + "'";
-   zmq_ret += ", 'account_name':'" + string(AccountName()) + "'";
-   zmq_ret += ", 'account_balance':" + DoubleToString(AccountBalance());
-   zmq_ret += ", 'account_equity':" + DoubleToString(AccountEquity());
-   zmq_ret += ", 'account_profit':" + DoubleToString(AccountProfit());
-   zmq_ret += ", 'account_free_margin':" + DoubleToString(AccountFreeMargin());
-   zmq_ret += ", 'account_leverage' :" + IntegerToString(AccountLeverage());
+   zmq_ret += ", 'name':'" + string(AccountName()) + "'";
+   zmq_ret += ", 'balance':" + DoubleToString(AccountBalance());
+   zmq_ret += ", 'equity':" + DoubleToString(AccountEquity());
+   zmq_ret += ", 'profit':" + DoubleToString(AccountProfit());
+   zmq_ret += ", 'margin_free':" + DoubleToString(AccountFreeMargin());
+   zmq_ret += ", 'leverage' :" + IntegerToString(AccountLeverage());
    zmq_ret += "}]";
 
    // Additional information available at: https://docs.mql4.com/account

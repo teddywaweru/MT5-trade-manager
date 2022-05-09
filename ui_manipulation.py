@@ -2,6 +2,7 @@
 """
 import sys
 import time
+print('{}: Start of Loading UI Manipulation Imports'.format(time.time()))
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 # from PySide6 import QtCore, QtGui, QtWidgets
@@ -11,6 +12,9 @@ from UI_templates import main_window
 from dwx_connector import connect_dwx as conn_dwx
 from table_MVC import TableModel
 import pandas as pd
+import asyncio
+
+print('{}: Start of Loading UI Manipulation Code'.format(time.time()))
 
 
 class CallUi(QtWidgets.QMainWindow):
@@ -23,8 +27,8 @@ class CallUi(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
 
         # Load DWX Connection Object
-        # self.dwx_mvc = DwxModel()
-        self.dwx, self.dwx_mvc = conn_dwx()
+        # self.conn_api_mvc = DwxModel()
+        self.conn_api, self.conn_api_mvc = asyncio.run(conn_dwx())
         
 
         # Create Main UI Instance
@@ -39,6 +43,8 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.setup_combobox_connect()
 
+        self.load_trades()
+
         #New Prepared Trade Object
         self.prep_new_trade = None
 
@@ -49,42 +55,50 @@ class CallUi(QtWidgets.QMainWindow):
         ]
 
         #List of Order Strategy buttons. For iterations
-        self.order_strategy_btns = [
+        self.order_strategy_btns = (
             self.ui.SINGLE_TRADE_BTN,
             self.ui.MINIMAL_TRADE_BTN,
             self.ui.TWO_WAY_SPLIT_TRADE_BTN,
             self.ui.THREE_WAY_SPLIT_TRADE_BTN
-        ]
+        )
 
         #List of Timeframe buttons. For iterations
-        self.order_timeframe_btns = [
-            self.ui.MIN_1440_BTN, self.ui.MIN_15_BTN, self.ui.MIN_60_BTN
-            ]
+        self.order_timeframe_btns = (
+            self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
+        )
 
         #ist of instrument comboboxes. For iterations
-        self.instr_comboboxes = [
+        self.instr_comboboxes = (
             self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
-            ]
+            )
 
 
+        # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
+            # print(True)
 
 
         #ADD textlabel function to be loaded, similar to setupBtnconnect
         # also for text edits,
         #writing functions instead of loading in the __init__ will make the code more organized.
 
-        data = [
-            [4, 9, 2],
-            [1, 0, 0],
-            [3, 5, 0],
-            [3, 3, 2],
-            [7, 8, 9],
-        ]
+        # data = [
+        #     [4, 9, 2],
+        #     [1, 0, 0],
+        #     [3, 5, 0],
+        #     [3, 3, 2],
+        #     [7, 8, 9],
+        # ]
 
-        data = pd.DataFrame(data)
+        # data = pd.DataFrame(data)
 
-        self.table_model = TableModel(data)
-        self.ui.tableView.setModel(self.table_model)
+        # self.table_model = TableModel(data)
+        # self.ui.tableView.setModel(self.table_model)
+    def load_trades(self):
+        """
+        _summary_
+        """        
+        trades = self.conn_api_mvc.get_current_trades()
+        self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
 
 
     def disable_execute_trade_btn(self):
@@ -98,7 +112,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         Args:
             instr_combobox (combobox Object): Combobox object that created the signal
-        """  
+        """
         #Disable the Execute button.      
         self.disable_execute_trade_btn()
 
@@ -195,14 +209,14 @@ class CallUi(QtWidgets.QMainWindow):
     def setup_btn_connect(self):
         """[Initiate button functions]
         """
-        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.dwx_mvc.get_trades)
+        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_current_trades)
         # test_hist_req_data = [
         #     {'_symbol': 'EURUSD',
         #     '_timeframe': 1440,
         #     '_start': '2021.01.01 00:00:00',
         #     '_end': pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00') }
         # ]
-        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.dwx_mvc.send_hist_request)
+        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.conn_api_mvc.send_hist_request)
         self.ui.PREPARE_NEW_TRADE_BTN.clicked.connect(self.prepare_new_trade)
         self.ui.EXECUTE_NEW_TRADE_BTN.clicked.connect(self.execute_new_trade)
 
@@ -231,8 +245,12 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN)
         )
 
-        self.ui.MIN_15_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_15_BTN)
+        self.ui.MIN_5_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
+        )
+
+        self.ui.MIN_30_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_30_BTN)
         )
 
         self.ui.MIN_1440_BTN.clicked.connect(
@@ -243,13 +261,28 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
         )
 
+        self.ui.CURRENT_TRADES_TABLE.doubleClicked.connect(self.clicked_table)
+
+
+    def clicked_table(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        idx = self.ui.CURRENT_TRADES_TABLE.selectedIndexes()[0]
+        print(idx)
+        id_us = int(self.ui.CURRENT_TRADES_TABLE.model().data(idx,0))
+        print(id_us)
+
+        return True
 
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
 
     def setup_combobox_connect(self):
         """_summary_
-        """   
+        """
 
         self.ui.COMMS_INDCS_COMBOBOX.currentTextChanged.connect(
             lambda: self.combobox_text_changed(self.ui.COMMS_INDCS_COMBOBOX)
@@ -258,6 +291,8 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.combobox_text_changed(self.ui.CURRENCY_PAIRS_METALS_COMBOBOX)
         )
 
+    def trade_selection_changed(self):
+        print(True)
 
     def prepare_new_trade(self):
         """[summary]
@@ -313,24 +348,49 @@ class CallUi(QtWidgets.QMainWindow):
             'buy_sell_limit': buy_sell_limit
         }
         try:
-            self.prep_new_trade = self.dwx_mvc.prepare_new_trade(new_trade_dict)
+            self.prep_new_trade = self.conn_api_mvc.prepare_new_trade(new_trade_dict)
 
             self.ui.PIP_VALUE_TEXT.setText(str(round(self.prep_new_trade.pip_value, 4)))
             self.ui.ATR_IN_PIPS_TEXT.setText(str(round(self.prep_new_trade.atr_in_pips, 2)))
             self.ui.LOT_SIZE_TEXT.setText(str(str(round(self.prep_new_trade.lot_size, 2))))
             self.ui.RISK_AMOUNT_TEXT.setText(str(round(self.prep_new_trade.risk_amount, 4)))
-            self.ui.ACCOUNT_BALANCE_TEXT.setText(str(self.prep_new_trade.account_info['account_equity']))
+            self.ui.ACCOUNT_BALANCE_TEXT.setText(str(self.prep_new_trade.account_info['balance']))
             self.ui.STOP_LOSS_TEXT.setText(str(round(self.prep_new_trade.stop_loss, 5)))
             self.ui.TAKE_PROFIT_TEXT.setText(str(round(self.prep_new_trade.take_profit, 5)))
             self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(True)
+
+            hist_df = self.prep_new_trade.trade_df
+
+            # hist_table = TableModel(hist_df)
+
+            # model = QtGui.QStandardItemModel()
+            # model.setHorizontalHeaderLabels(hist_df.columns)
+
+            
+
+
+            # self.ui.HIST_DF_TABLE.setHorizontalHeader([1,2,3,4])
+            # self.ui.HIST_DF_TABLE.setHorizontalHeader([i for i in hist_df.columns if i not in ['Index']])
+            # self.ui.HIST_DF_TABLE.setHorizontalHeader(model)
+
+            # self.ui.HIST_DF_TABLE.setVisible(True)
+            self.ui.HIST_DF_TABLE.setModel(TableModel(hist_df))
+
+
+
         except Exception as ex:
             _exstr = "Exception Type {0}. Args:\n{1!r}"
             _msg = _exstr.format(type(ex).__name__, ex.args)
             print(_msg)
 
+
+
     def execute_new_trade(self):
         """[summary]
         """
+
+        self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(False)
+
         trade_strategy = ''
         #iterate to select the trade strategy that is selected.
         #split the trade, or make a single order
@@ -342,28 +402,25 @@ class CallUi(QtWidgets.QMainWindow):
             print('Select a trading strategy.')
             return
 
-        order_type = {
-            'SELL': 1, 'BUY': 0, 'SELL LIMIT': 2, 'BUY LIMIT': 3
-        }
-
         try:
-            self.dwx_mvc.new_trade(
+            self.conn_api_mvc.new_trade(
                 {
                 '_action': 'OPEN',
-                '_type': order_type[self.prep_new_trade.trade_dict['_order']],      #1 for SELL, O for BUY
+                '_type': self.prep_new_trade.trade_dict['_order'],      #1 for SELL, O for BUY
                 '_symbol': self.prep_new_trade._symbol,
-                '_price': 0.0,                  #Refers to current price value
+                '_price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
+                     float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),                  #Refers to current price value
                 # SL/TP in POINTS, not pips.
-                '_SL': self.prep_new_trade.atr_in_pips * self.prep_new_trade.sl_multiplier * 10, 
+                '_SL': self.prep_new_trade.atr_in_pips * self.prep_new_trade.sl_multiplier * 10,
                 '_TP': self.prep_new_trade.atr_in_pips * self.prep_new_trade.tp_multiplier * 10,
-                '_comment': self.prep_new_trade.account_info,
+                '_comment': self.ui.NEW_TRADE_COMMENT_VALUE.toPlainText(),
                 '_lots': round(self.prep_new_trade.lot_size, 2),
                 '_magic': 123456,
                 '_ticket': 0
                 },
                 {
                     'trade_strategy': trade_strategy,
-                    'split_ratio': 0.5,
+                    'split_ratio': 0.8,
                     'split_ratio_2' : 0.5
                 }
             )

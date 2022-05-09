@@ -25,7 +25,7 @@ class RiskManagement():
         self.trade_dict = new_trade_dict    #Dict containing the new trade's details
 
         if risk_ratio is None:
-            risk_ratio = 0.0095   # Default value for risk. >1% of the account.
+            risk_ratio = 0.01   # Default value for risk. >1% of the account.
         self.risk_ratio = risk_ratio
 
         self.risk_amount = None         #Determines stop loss placement
@@ -41,6 +41,9 @@ class RiskManagement():
         self._symbol = hist_db_key.partition('_')[0]    #Partitioning the symbol EURUSD_D1 to obtain instrument symbol
 
         self._timeframe = hist_db_key.partition('_')[2] #Partitioning the symbol EURUSD_D1 to obtain timeframe
+
+        self._symbol_info = self.dwx.symbol_info(self._symbol)._asdict() if hasattr(self.dwx, 'symbol_info') \
+                                else None
 
         self._symbol_bid = None
 
@@ -62,13 +65,15 @@ class RiskManagement():
 
         self.lot_size = None
 
-        self.sl_multiplier = 1.5
+        self.sl_multiplier = 2
 
         self.tp_multiplier = 1
 
         self.stop_loss = None
 
         self.take_profit = None
+
+        
 
 
 
@@ -132,20 +137,15 @@ class RiskManagement():
                 self.atr = self.trade_df['atr'].iloc[-1]
 
                 # Calculate risk amount of the account balance
-                if hasattr(self.dwx, 'subscribe_symbols'):
-                    self.risk_amount = self.account_info['balance'] * self.risk_ratio
-                else:
-                    self.risk_amount = self.account_info['account_balance'] * self.risk_ratio
+                self.risk_amount = self.account_info['balance'] * self.risk_ratio
                 
 
 
                 # Calculate ATR in pip value for the pair
                 # Variations are dependent on how the ATR is calculated for
                 # the _symbol
-                self.atr_in_pips = self.atr if self._symbol[:3] in \
-                                ['XPT'] \
-                            else self.atr * 10 if self._symbol[:3] in \
-                                ['XAU', 'XPD'] \
+                self.atr_in_pips = self.atr * 10 if self._symbol[:3] in \
+                                ['XAU','XPD','XPT'] \
                             else self.atr * 100 if self._symbol[:3] in \
                                 ['XAG'] \
                                     or self._symbol[3:] in \
@@ -168,6 +168,8 @@ class RiskManagement():
                 # 0.1 refers to the lot size for a self.pip_value
                 self.lot_size = 0.1 * self.calc_pip_value / self.pip_value * 0.01 if \
                                 self._symbol[3:] in ['JPY'] \
+                            else 0.1 * self.calc_pip_value/ self.pip_value * 100 if \
+                                self._symbol[:3] in ['XAU'] \
                             else 0.1 * self.calc_pip_value / self.pip_value if \
                                 self._symbol[:3] in \
                                 ['XAU', 'XAG', 'XPD', 'XPT', \
@@ -205,12 +207,14 @@ class RiskManagement():
                     self.pip_value = 1
                 
                 # ELSE remaining list of indices & commodities are based on
-                #different currency pairs, as populated in the 
+                #different currency pairs, as populated in the
                 #INDICES_SECONDARY_SYMBOL dictionary
                 else:
-
+                    
+                    self.sec_symbol = INDICES_SECONDARY_SYMBOL.get(self._symbol)
+                    
                     self.sec_symbol_bid, self.sec_symbol_ask = \
-                        self.bid_ask_price(INDICES_SECONDARY_SYMBOL.get(self._symbol))
+                        self.bid_ask_price(self.sec_symbol)
 
                     self.pip_value = (self.sec_symbol_bid + self.sec_symbol_ask) / 2 if 'USD' in self.sec_symbol[3:] \
                         else 1 / ((self.sec_symbol_bid + self.sec_symbol_ask) / 2)
@@ -218,9 +222,14 @@ class RiskManagement():
 
                 # obtin atr from DF
                 self.atr = self.trade_df['atr'].iloc[-1]
+                
+                self.atr += self._symbol_info['spread'] * self._symbol_info['point']
 
                 # calculate risk amount
-                self.risk_amount = self.account_info['account_balance'] * self.risk_ratio
+                self.risk_amount = self.account_info['balance'] * self.risk_ratio
+                
+                #For testing at different account sizes
+                # self.risk_amount = 100000 * self.risk_ratio
 
                 # calculate atr in pips
                 self.atr_in_pips = self.atr if self._symbol in \
@@ -245,10 +254,16 @@ class RiskManagement():
                 # self.calc_pip_value = 500 / (self.atr_in_pips * self.sl_multiplier)
 
                 # calculate lot size
-                self.lot_size = self.calc_pip_value / self.pip_value
+                self.lot_size = np.round(self.calc_pip_value / self.pip_value, 1) * 10 if \
+                                    self._symbol in ['NETH25'] else \
+                                    np.round(self.calc_pip_value / self.pip_value,1) * 0.01 if \
+                                        self._symbol in ['JPN225'] \
+                                    else np.round(self.calc_pip_value / self.pip_value, 1)
+
 
                 # Calculate SL & TP
                 self.stop_loss, self.take_profit = self.calc_sl_tp(self.atr)
+                pass
                 
             except Exception as ex:
                 ex_str = 'Exception Type: {0} Args: \n {1!r}'
@@ -315,9 +330,17 @@ class RiskManagement():
         Returns:
             [bid & ask price]: [Instant bid as prices for the instrument]
         """
-        # confirm if DWXClient class in use depending on attribute availability
+        # confirm if Connection API  in use depending on attribute availability
+        # OPTIONS ARE: MT5 API, DWXConn Client, DWXZMQ connection
 
-        if hasattr(self.dwx, 'subscribe_symbols'):
+        # Priority to MT5 API
+        if hasattr(self.dwx, 'TIMEFRAME_D1'):
+            _symbol_tick_dict = self.dwx.symbol_info_tick(_symbol)._asdict()
+
+            return _symbol_tick_dict['bid'], _symbol_tick_dict['ask'] 
+
+
+        elif hasattr(self.dwx, 'subscribe_symbols'):
 
             #Get bid & ask prices of the _symbol
             self.dwx.subscribe_symbols([_symbol])
@@ -332,7 +355,7 @@ class RiskManagement():
             #utilize the DWX_ZMQ Class for the market data
             #Get bid & ask prices of the _symbol
             self.dwx._DWX_MTX_GET_INSTANT_RATES_(_symbol)
-            time.sleep(0.05)
+            time.sleep(0.5)
 
             _symbol_bid, _symbol_ask = [self.dwx.instant_rates_DB[_symbol][-1].get(key) for key in ['_bid', '_ask']]
 
@@ -365,10 +388,13 @@ INDICES_SECONDARY_SYMBOL = {
                 'AUS200': 'AUDUSD',
                 'CHINAH': 'USDHKD',
                 'JP225': 'USDJPY',
+                'HK50': 'USDHKD',
                 'GERTEC30': 'EURUSD', 'GER40': 'EURUSD',
                 'FRA40': 'EURUSD', 'SPA35': 'EURUSD',
-                'NETH25': 'EURUSD',
+                'NETH25': 'EURUSD', 'EUSTX50':'EURUSD',
                 'UK100': 'GBPUSD',
-                'SCI25': 'USDSGD'
+                'SCI25': 'USDSGD',
+                'JPN225':'USDJPY',
+                'SWI20':'USDCHF',
+                'CA60': 'USDCAD'
                             }
-

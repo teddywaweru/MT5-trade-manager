@@ -8,6 +8,7 @@ start
 import time
 import ui_manipulation
 import UI_templates.ui_converter as ui_conv
+print('{}: Start of Application'.format(time.time()))
 
 
 def setup():
@@ -20,7 +21,7 @@ def setup():
 
 if __name__ == "__main__":
     # convert .ui to .py. Only relevant for development stages.
-    print(time.time())
+    # print(time.time())
     ui_conv.ui_converter()
     #setup start
-    setup ()
+    setup()
