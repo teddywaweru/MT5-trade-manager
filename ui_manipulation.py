@@ -64,7 +64,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         #List of Timeframe buttons. For iterations
         self.order_timeframe_btns = (
-            self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
+            self.ui.MIN_1_BTN,self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
         )
 
         #ist of instrument comboboxes. For iterations
@@ -96,9 +96,10 @@ class CallUi(QtWidgets.QMainWindow):
     def load_trades(self):
         """
         _summary_
-        """        
+        """
         trades = self.conn_api_mvc.get_current_trades()
         self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
+        self.ui.CURRENT_TRADES_TABLE.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
 
     def disable_execute_trade_btn(self):
@@ -210,6 +211,7 @@ class CallUi(QtWidgets.QMainWindow):
         """[Initiate button functions]
         """
         self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_current_trades)
+
         # test_hist_req_data = [
         #     {'_symbol': 'EURUSD',
         #     '_timeframe': 1440,
@@ -247,6 +249,10 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.ui.MIN_5_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
+        )
+
+        self.ui.MIN_1_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
         )
 
         self.ui.MIN_30_BTN.clicked.connect(
