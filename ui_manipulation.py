@@ -49,10 +49,10 @@ class CallUi(QtWidgets.QMainWindow):
         self.prep_new_trade = None
 
         #List of Order Buttons. For iterations.
-        self.order_btns = [
+        self.order_btns = (
             self.ui.SELL_BTN, self.ui.SELL_LIMIT_BTN,
             self.ui.BUY_BTN, self.ui.BUY_LIMIT_BTN
-        ]
+        )
 
         #List of Order Strategy buttons. For iterations
         self.order_strategy_btns = (
