@@ -65,7 +65,7 @@ class RiskManagement():
 
         self.lot_size = None
 
-        self.sl_multiplier = 2
+        self.sl_multiplier = 3
 
         self.tp_multiplier = 1
 

@@ -126,7 +126,7 @@ class CallUi(QtWidgets.QMainWindow):
             #If i is not the currently altered combobox, alter the text to blank
             if i != instr_combobox:
                 i.setCurrentText('')
-        print('Current Instrument to trade: {}.'.format(instr_combobox.currentText()))
+        # print('Current Instrument to trade: {}.'.format(instr_combobox.currentText()))
 
     def order_type_btn_clicked(self, order_btn):
         """Styling & disabling for order buttons depending on which one is selected.
