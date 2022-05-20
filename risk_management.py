@@ -25,7 +25,7 @@ class RiskManagement():
         self.trade_dict = new_trade_dict    #Dict containing the new trade's details
 
         if risk_ratio is None:
-            risk_ratio = 0.01   # Default value for risk. >1% of the account.
+            risk_ratio = 0.02   # Default value for risk. >1% of the account.
         self.risk_ratio = risk_ratio
 
         self.risk_amount = None         #Determines stop loss placement

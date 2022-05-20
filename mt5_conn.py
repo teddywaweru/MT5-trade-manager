@@ -166,7 +166,7 @@ class Mt5Mvc():
         if new_trade['_symbol'] in CURRENCY_METAL_PAIRS:
             modif_trade['split_ratio'] = 0.5
         elif new_trade['_symbol'] in COMMODITIES_INDICES:
-            modif_trade['split_ratio'] = 0.8
+            modif_trade['split_ratio'] = 0.9
         
         
 
@@ -293,8 +293,7 @@ class Mt5Mvc():
 
 
         for trade in trades:
-            self.mt5_mvc.order_send(trade)
-            time.sleep(0.1)
+
             result = self.mt5_mvc.order_send(trade)
             print(result.retcode)
 
