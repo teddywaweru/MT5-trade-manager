@@ -49,10 +49,10 @@ class CallUi(QtWidgets.QMainWindow):
         self.prep_new_trade = None
 
         #List of Order Buttons. For iterations.
-        self.order_btns = [
+        self.order_btns = (
             self.ui.SELL_BTN, self.ui.SELL_LIMIT_BTN,
             self.ui.BUY_BTN, self.ui.BUY_LIMIT_BTN
-        ]
+        )
 
         #List of Order Strategy buttons. For iterations
         self.order_strategy_btns = (
@@ -64,7 +64,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         #List of Timeframe buttons. For iterations
         self.order_timeframe_btns = (
-            self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
+            self.ui.MIN_1_BTN,self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
         )
 
         #ist of instrument comboboxes. For iterations
@@ -96,9 +96,10 @@ class CallUi(QtWidgets.QMainWindow):
     def load_trades(self):
         """
         _summary_
-        """        
+        """
         trades = self.conn_api_mvc.get_current_trades()
         self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
+        self.ui.CURRENT_TRADES_TABLE.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
 
     def disable_execute_trade_btn(self):
@@ -125,7 +126,7 @@ class CallUi(QtWidgets.QMainWindow):
             #If i is not the currently altered combobox, alter the text to blank
             if i != instr_combobox:
                 i.setCurrentText('')
-        print('Current Instrument to trade: {}.'.format(instr_combobox.currentText()))
+        # print('Current Instrument to trade: {}.'.format(instr_combobox.currentText()))
 
     def order_type_btn_clicked(self, order_btn):
         """Styling & disabling for order buttons depending on which one is selected.
@@ -210,6 +211,7 @@ class CallUi(QtWidgets.QMainWindow):
         """[Initiate button functions]
         """
         self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_current_trades)
+
         # test_hist_req_data = [
         #     {'_symbol': 'EURUSD',
         #     '_timeframe': 1440,
@@ -247,6 +249,10 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.ui.MIN_5_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
+        )
+
+        self.ui.MIN_1_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
         )
 
         self.ui.MIN_30_BTN.clicked.connect(
@@ -420,7 +426,7 @@ class CallUi(QtWidgets.QMainWindow):
                 },
                 {
                     'trade_strategy': trade_strategy,
-                    'split_ratio': 0.8,
+                    'split_ratio': 0.9,
                     'split_ratio_2' : 0.5
                 }
             )

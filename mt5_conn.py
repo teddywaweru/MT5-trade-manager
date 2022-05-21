@@ -166,7 +166,7 @@ class Mt5Mvc():
         if new_trade['_symbol'] in CURRENCY_METAL_PAIRS:
             modif_trade['split_ratio'] = 0.5
         elif new_trade['_symbol'] in COMMODITIES_INDICES:
-            modif_trade['split_ratio'] = 0.8
+            modif_trade['split_ratio'] = 0.9
         
         
 
@@ -178,9 +178,15 @@ class Mt5Mvc():
             if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
                 else new_trade['price'] - new_trade['_TP'] * symbol_info['point']
 
-        new_trade['scaling_tp'] = new_trade['price'] + 5 * new_trade['_TP'] * symbol_info['point'] \
+            
+        #symbol_info['point'] holds the number of signficant decimal points for the financial instrument
+        new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['_TP'] * symbol_info['point']) \
             if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - 5 * new_trade['_TP'] * symbol_info['point']
+                else new_trade['price'] - (3 * new_trade['_TP'] * symbol_info['point'])
+
+        new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['_TP'] * symbol_info['point']) \
+            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] - (5 * new_trade['_TP'] * symbol_info['point'])
 
         type_filling = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']])
 
@@ -211,20 +217,29 @@ class Mt5Mvc():
 
         [new_trade.pop(key, None) for key in remove_keys]
 
-        if modif_trade['trade_strategy'] == 'SINGLE TRADE':
-            self.mt5_mvc.order_send(new_trade)
+        #Declare multiple functions for the different trade strategies that could be implemented
 
-        elif modif_trade['trade_strategy'] == '2-WAY SPLIT TRADE':
+        
+        def minimal_trade():
+            new_trade.update(
+                {
+                    'volume': new_trade['volume'] * 0.1     #Trade @ 40% of the Previous Risk Amount
+                }
+            )
+
+            return (new_trade)
+
+
+        def single_trade():
+            return (new_trade)
+
+        def two_way_split_trade():
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1['volume'] = ceil((new_trade['volume'] * modif_trade['split_ratio'] *100))/100 if \
                     new_trade['symbol'] in CURRENCY_METAL_PAIRS \
                     else ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10 if \
                     new_trade['symbol'] in COMMODITIES_INDICES \
                         else None
-
-            # new_trade_1.update(
-            #     {'volume': ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10,}
-            # )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2['volume'] = ceil((new_trade['volume'] - new_trade_1['volume']) *100)/100 if \
@@ -234,23 +249,14 @@ class Mt5Mvc():
                         else None
             new_trade_2.update(
                 {
-                'tp': new_trade['scaling_tp']
+                'tp': new_trade['scale_tp_by_5']
                 }
-
             )
 
-
-            for i in [
-                new_trade_1, new_trade_2
-            ]:
-                result = self.mt5_mvc.order_send(i)
-                print(result.retcode)
-                print(self.mt5_mvc.last_error())
-                print(result._asdict().items())
-                time.sleep(0.1)
+            return (new_trade_1,new_trade_2)
 
 
-        elif modif_trade['trade_strategy'] == '3-WAY SPLIT TRADE':
+        def three_way_split_trade():
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade (0.8)
             new_trade_1.update(
                 {'volume': new_trade['volume'] * modif_trade['split_ratio'],}
@@ -261,7 +267,7 @@ class Mt5Mvc():
             new_trade_2.update(
                 {
                     'volume': new_trade['volume'] * (1 - modif_trade['split_ratio']) * modif_trade['split_ratio_2'],
-                    'tp': new_trade['tp'] * 3
+                    'tp': new_trade['scale_tp_by_3']
                 }
             )
 
@@ -269,30 +275,33 @@ class Mt5Mvc():
             new_trade_3.update(
                 {
                     'volume': new_trade['volume'] - new_trade_1['volume'] - new_trade_2['volume'],
-                    'tp': new_trade['tp'] * 5
+                    'tp': new_trade['scale_tp_by_5']
                 }
             )
 
-
-            for i in [
-                new_trade_1, new_trade_2, new_trade_3
-            ]:
-                self.mt5_mvc.order_send(i)
-                time.sleep(0.1)
-
-        elif modif_trade['trade_strategy'] == 'MINIMAL TRADE':
-            new_trade.update(
-                {
-                    'volume': new_trade['volume'] * 0.2     #Trade @ 40% of the Previous Risk Amount
-                }
-            )
-
-            self.mt5_mvc.order_send(new_trade)
+            return  (new_trade_1, new_trade_2, new_trade_3)
 
 
+        trade_strategy_funcs = {
+            'SINGLE TRADE': single_trade(),
+            '2-WAY SPLIT TRADE': two_way_split_trade(),
+            '3-WAY SPLIT TRADE': three_way_split_trade(),
+            'MINIMAL TRADE': minimal_trade()
+        }
 
-        #Push collected data to data manipulation
-        # to prepare DataFrames that may be utilised at any time
+        trades = trade_strategy_funcs.get(modif_trade['trade_strategy'],'Failed to Capture Trade Strategy')
+
+
+        for trade in trades:
+
+            result = self.mt5_mvc.order_send(trade)
+            print(result.retcode)
+
+            print(self.mt5_mvc.last_error())
+            print(result._asdict().items())
+            time.sleep(0.1)
+
+
 
 TIMEFRAMES_PERIODS = {
                 1: 'TIMEFRAME_M1', 5 : 'TIMEFRAME_M5', 15 : 'TIMEFRAME_M15',
