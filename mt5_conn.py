@@ -3,12 +3,14 @@ _summary_
 """
 # pylint: disable=eval-used
 
-# import MetaTrader5 as mt5
-import pandas as pd
-
-from math import ceil
-
 import time
+from math import ceil
+print(f'{time.asctime(time.localtime())}: Start loading pandas')
+# import pandas as pd
+from pandas import Timestamp, Timedelta, DataFrame, to_datetime
+print(f'{time.asctime(time.localtime())}: Finish loading pandas')
+
+# from dataclasses import dataclass
 
 from data_manipulation import DataManipulation
 
@@ -30,8 +32,70 @@ class Mt5Mvc():
 
         self.comm_indcs = COMMODITIES_INDICES
 
-        # calculations from RiskManagement class
-        self.new_trade_risk = None
+        # Parameter calculations from RiskManagement class
+        self.trade_risk_calc = None
+
+    def symbol_groups(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        return ['FOREX', 'METALS', 'INDICES', 'COMMODITIES', \
+            'CRYPTO', 'ENERGIES', 'FUTURES']
+
+
+
+    class GetSymbols:
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        def __init__(self, mt5= None):
+            """_summary_
+            """
+            self.mt5 = mt5
+
+            def segment_symbols(text):
+                """_summary_
+                """
+                return sorted((i._asdict()['name']for i in symbols_info \
+                    if text in i._asdict()['path'].lower() \
+                        and i._asdict()['trade_mode'] == 4))
+                        #Trade_mode=4 refers to symbols that have no trade restrictions
+                        # https://www.mql5.com/en/docs/constants/environment_state/marketinfoconstants#:~:text=of%20enumeration%20ENUM_SYMBOL_TRADE_MODE.-,ENUM_SYMBOL_TRADE_MODE,-Identifier
+
+            print(f"{time.asctime(time.localtime())}: Start Loading Symbols")
+            symbols_info = self.mt5.symbols_get()
+
+
+            self.forex = segment_symbols('forex')
+            self.metals = segment_symbols('metals')
+            self.indices = segment_symbols('indices')
+            self.stocks =  segment_symbols('stocks')
+            self.commodities =  segment_symbols('commodities')
+            self.crypto = segment_symbols('crypto')
+            self.energies = segment_symbols('energies')
+            self.futures = segment_symbols('futures')
+
+            print(f"{time.asctime(time.localtime())}: Finish Loading Symbols")
+
+
+
+    def get_current_trades(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        open_positions = self.mt5_mvc.positions_get()
+
+        open_positions_list = [i._asdict() for i in open_positions]
+
+        open_positions_df = DataFrame(open_positions_list)
+
+        return open_positions_df
 
 
     def prepare_new_trade(self,new_trade_dict):
@@ -39,13 +103,13 @@ class Mt5Mvc():
         """
 
         #Data duration statically selected to be set to be at least 30 data points from current time
-        new_trade_dict['_start'] = (
-            pd.Timestamp.now() - pd.Timedelta(minutes = (new_trade_dict['_timeframe'] * 30)))
+        new_trade_dict['start'] = (
+            Timestamp.now() - Timedelta(minutes = (new_trade_dict['timeframe'] * 30)))
 
-        new_trade_dict['_end'] = pd.Timestamp.now()
+        new_trade_dict['end'] = Timestamp.now()
 
-        new_trade_dict['instr_type'] = 'curr_mtl' if new_trade_dict['_symbol'] in self.curr_mtl_pairs \
-                                    else 'comm_indcs' if new_trade_dict['_symbol'] in self.comm_indcs \
+        new_trade_dict['instr_type'] = 'curr_mtl' if new_trade_dict['symbol'] in self.curr_mtl_pairs \
+                                    else 'comm_indcs' if new_trade_dict['symbol'] in self.comm_indcs \
                                     else None
 
         # Update History_DB. Daily Data selected by default.
@@ -56,19 +120,22 @@ class Mt5Mvc():
         #Obtain Recent Account Information. Account Balance is most critical
         account_info = self.mt5_mvc.account_info()._asdict()
 
+        symbol_info = self.mt5_mvc.symbols_get(new_trade_dict['symbol'])[0]._asdict()
+
         #Initiate  Risk Management Class
         # account balance
         # symbol
-        self.new_trade_risk = RiskManagement(self.mt5_mvc,
+        self.trade_risk_calc = RiskManagement(mt5 = self.mt5_mvc,
                                         new_trade_dict= new_trade_dict,             # New Trade details
                                         risk_ratio= None,
                                         account_info= account_info,
                                         new_trade_df= trade_hist_df,
-                                        hist_db_key= hist_db_key)
+                                        hist_db_key= hist_db_key,
+                                        symbol_info= symbol_info).calc_params()
 
 
-        self.new_trade_risk.calc_lot()
-        return self.new_trade_risk
+        # self.new_trade_risk.calc_lot()
+        return self.trade_risk_calc
 
 
 
@@ -78,42 +145,42 @@ class Mt5Mvc():
         if hist_request == {}:
             return print('Empty Request.')
 
-        _symbol = hist_request.get('_symbol', 'EURUSD')
+        _symbol = hist_request.get('symbol', 'EURUSD')
         #A00 Change timestamp from daily.
         # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15
         _timeframe = '{}.{}'.format(MT5_OBJ_STRING,
-                                        TIMEFRAMES_PERIODS[hist_request.get('_timeframe', 1440)])
+                                        TIMEFRAMES_PERIODS[hist_request.get('timeframe', 1440)])
 
         #ADD able to add multiple requests???
         #create the label in the History_DB keys
         #A00 change timestamp. add try except loops
-        hist_db_key = '{}_{}'.format(hist_request['_symbol'],
-                                    TIMEFRAMES_PERIODS[hist_request['_timeframe']])
-        _start = hist_request.get('_start', None)
-        _end = hist_request.get('_end',pd.Timestamp.now())
+        hist_db_key = '{}_{}'.format(hist_request['symbol'],
+                                    TIMEFRAMES_PERIODS[hist_request['timeframe']])
+        _start = hist_request.get('start', None)
+        _end = hist_request.get('end',Timestamp.now())
 
         #Get historical rates for the _symbol
         hist_rates = self.mt5_mvc.copy_rates_range(_symbol, eval(_timeframe), _start, _end)
 
         time.sleep(1)
 
-        n = 1
+        idx_n = 1
         while len(hist_rates) < 30:
             #Data duration statically selected to be set to be at least 30 data points from current time
-            hist_request['_start'] = (
-                pd.Timestamp.now() - pd.Timedelta(minutes = (hist_request['_timeframe'] * 48 * n)))
+            hist_request['start'] = (
+                Timestamp.now() - Timedelta(minutes = (hist_request['timeframe'] * 48 * idx_n)))
 
-            n += 1
-            _start = hist_request.get('_start', None)
+            idx_n += 1
+            _start = hist_request.get('start', None)
 
             #Get historical rates for the _symbol
             hist_rates = self.mt5_mvc.copy_rates_range(_symbol, eval(_timeframe), _start, _end)
 
 
 
-        hist_db_df = pd.DataFrame(hist_rates)
+        hist_db_df = DataFrame(hist_rates)
 
-        hist_db_df['time'] = pd.to_datetime(hist_db_df['time'], unit= 's')
+        hist_db_df['time'] = to_datetime(hist_db_df['time'], unit= 's')
 
         #Push collected data to data manipulation
         # to prepare DataFrames that may be utilised at any time
@@ -122,15 +189,6 @@ class Mt5Mvc():
         hist_db_df = DataManipulation(hist_db_df).data_df
 
         return hist_db_key, hist_db_df
-
-    def get_current_trades(self):
-        open_positions = self.mt5_mvc.positions_get()
-
-        open_positions_list = [i._asdict() for i in open_positions]
-
-        open_positions_df = pd.DataFrame(open_positions_list)
-
-        return open_positions_df
 
 
     def new_trade(self, new_trade, modif_trade):
@@ -144,59 +202,72 @@ class Mt5Mvc():
         #MT5 API has different definitions for some of the dict parameters for a
         # new trade, which shall be changed
 
-        symbol_info = self.mt5_mvc.symbol_info(new_trade['_symbol'])._asdict()
+        symbol_info = self.mt5_mvc.symbol_info(new_trade['symbol'])._asdict()
 
-        time.sleep(0.5)
+        # time.sleep(0.5)
 
-        trade_action = '{}.{}'.format(MT5_OBJ_STRING, MT5_TRADE_ACTIONS['instant'])\
-                            if new_trade['_price'] == 0 else \
-                            '{}.{}'.format(MT5_OBJ_STRING, MT5_TRADE_ACTIONS['pending'])
+        trade_action = f"{MT5_OBJ_STRING}.{MT5_TRADE_ACTIONS['instant']}" \
+                            if new_trade['price'] == 0 \
+                            else f"{MT5_OBJ_STRING}.{MT5_TRADE_ACTIONS['pending']}"
 
-        trade_type = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPES[new_trade['_type']])
+        trade_type = f"{MT5_OBJ_STRING}.{MT5_ORDER_TYPES[new_trade['type']]}"
 
         if trade_action == 'self.mt5_mvc.TRADE_ACTION_DEAL':
-            new_trade['price'] =  symbol_info['ask'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_BUY' else \
-                                symbol_info['bid'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_SELL' else \
-                                None
+            new_trade['price'] =  symbol_info['ask'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_BUY' \
+                        else symbol_info['bid'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_SELL' \
+                        else None
 
         else:
-            new_trade['price'] = new_trade['_price']
+            new_trade['price'] = new_trade['price']
 
-        #Modify Split Ratio based on instrument to be traded.
-        if new_trade['_symbol'] in CURRENCY_METAL_PAIRS:
-            modif_trade['split_ratio'] = 0.5
-        elif new_trade['_symbol'] in COMMODITIES_INDICES:
+        #Modify Split Ratio based on tmeframe.
+        if modif_trade['timeframe'] < 1440:         #Daily Timeframe
             modif_trade['split_ratio'] = 0.9
+        else: modif_trade['split_ratio'] = 0.5
         
         
 
-        new_trade['sl'] = new_trade['price'] - new_trade['_SL'] * symbol_info['point'] \
-            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] + new_trade['_SL'] * symbol_info['point']
+        new_trade['sl'] = new_trade['price'] - new_trade['SL_points'] \
+            if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] + new_trade['SL_points']
 
-        new_trade['tp'] = new_trade['price'] + new_trade['_TP'] * symbol_info['point'] \
-            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - new_trade['_TP'] * symbol_info['point']
+        new_trade['tp'] = new_trade['price'] + new_trade['TP_points'] \
+            if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] - new_trade['TP_points']
+        # new_trade['sl'] = new_trade['price'] - new_trade['SL'] * symbol_info['point'] \
+        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+        #         else new_trade['price'] + new_trade['SL'] * symbol_info['point']
+
+        # new_trade['tp'] = new_trade['price'] + new_trade['TP'] * symbol_info['point'] \
+        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+        #         else new_trade['price'] - new_trade['TP'] * symbol_info['point']
 
             
         #symbol_info['point'] holds the number of signficant decimal points for the financial instrument
-        new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['_TP'] * symbol_info['point']) \
-            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - (3 * new_trade['_TP'] * symbol_info['point'])
+        new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['TP_points']) \
+            if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] - (3 * new_trade['TP_points'])
 
-        new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['_TP'] * symbol_info['point']) \
-            if new_trade['_type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - (5 * new_trade['_TP'] * symbol_info['point'])
+        new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['TP_points']) \
+            if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+                else new_trade['price'] - (5 * new_trade['TP_points'])
+        # new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['TP'] * symbol_info['point']) \
+        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+        #         else new_trade['price'] - (3 * new_trade['tp'] * symbol_info['point'])
 
-        type_filling = '{}.{}'.format(MT5_OBJ_STRING, MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']])
+        # new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['TP'] * symbol_info['point']) \
+        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
+        #         else new_trade['price'] - (5 * new_trade['tp'] * symbol_info['point'])
+
+        type_filling = f"{MT5_OBJ_STRING}.{MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']]}"
 
         new_trade.update(
             {
                 'action': eval(trade_action),
 
-                'symbol': new_trade['_symbol'],
+                # 'symbol': new_trade['_symbol'],
 
-                'volume': new_trade['_lots'],
+                # 'volume': new_trade['_lots'],
 
                 'type': eval(trade_type),
 
@@ -204,7 +275,7 @@ class Mt5Mvc():
 
                 'type_filling': eval(type_filling),
 
-                'comment': new_trade['_comment']
+                # 'comment': new_trade['_comment']
 
                 # 'type_time': eval('{}.ORDER_TIME_GTC'.format(MT5_OBJ_STRING)),
 
@@ -212,10 +283,10 @@ class Mt5Mvc():
 
             }
         )
-        remove_keys= ['_action', '_type', '_symbol', '_price', '_SL',\
-             '_TP', '_comment', '_magic', '_ticket','_lots']
+        # remove_keys= ['_action', '_type', '_symbol', '_price', '_SL',\
+        #      '_TP', '_comment', '_magic', '_ticket','_lots']
 
-        [new_trade.pop(key, None) for key in remove_keys]
+        # [new_trade.pop(key, None) for key in remove_keys]
 
         #Declare multiple functions for the different trade strategies that could be implemented
 
@@ -223,30 +294,40 @@ class Mt5Mvc():
         def minimal_trade():
             new_trade.update(
                 {
-                    'volume': new_trade['volume'] * 0.1     #Trade @ 40% of the Previous Risk Amount
+                    'volume': ceil(new_trade['volume'] * 0.1 / symbol_info['volume_step']) \
+                            * symbol_info['volume_step']     #Trade @ 10% of the Previous Risk Amount
                 }
             )
 
-            return (new_trade)
+            return (new_trade,)
 
 
         def single_trade():
-            return (new_trade)
+            new_trade['volume'] = \
+            ceil(new_trade['volume'] / symbol_info['volume_step']) \
+            * symbol_info['volume_step']
+
+            return (new_trade,)
 
         def two_way_split_trade():
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
-            new_trade_1['volume'] = ceil((new_trade['volume'] * modif_trade['split_ratio'] *100))/100 if \
-                    new_trade['symbol'] in CURRENCY_METAL_PAIRS \
-                    else ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10 if \
-                    new_trade['symbol'] in COMMODITIES_INDICES \
-                        else None
+            new_trade_1['volume'] = \
+                ceil(new_trade['volume'] * modif_trade['split_ratio'] / symbol_info['volume_step']) \
+                * symbol_info['volume_step']
+            #         new_trade['symbol'] in CURRENCY_METAL_PAIRS \
+            #         else ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10 if \
+            #         new_trade['symbol'] in COMMODITIES_INDICES \
+            #             else None
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
-            new_trade_2['volume'] = ceil((new_trade['volume'] - new_trade_1['volume']) *100)/100 if \
-                    new_trade['symbol'] in CURRENCY_METAL_PAIRS \
-                    else ceil((new_trade['volume'] - new_trade_1['volume']) *10)/10 if \
-                    new_trade['symbol'] in COMMODITIES_INDICES \
-                        else None
+            new_trade_2['volume'] = \
+                ceil((new_trade['volume'] - new_trade_1['volume']) / symbol_info['volume_step']) \
+                * symbol_info['volume_step']
+                # if new_trade['symbol'] in CURRENCY_METAL_PAIRS \
+                # else ceil((new_trade['volume'] - new_trade_1['volume']) *10)/10 \
+                #     if new_trade['symbol'] in COMMODITIES_INDICES \
+                #         else None
+
             new_trade_2.update(
                 {
                 'tp': new_trade['scale_tp_by_5']
@@ -266,7 +347,9 @@ class Mt5Mvc():
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2.update(
                 {
-                    'volume': new_trade['volume'] * (1 - modif_trade['split_ratio']) * modif_trade['split_ratio_2'],
+                    'volume': new_trade['volume'] \
+                                * (1 - modif_trade['split_ratio']) \
+                                * modif_trade['split_ratio_2'],
                     'tp': new_trade['scale_tp_by_3']
                 }
             )
@@ -283,13 +366,14 @@ class Mt5Mvc():
 
 
         trade_strategy_funcs = {
-            'SINGLE TRADE': single_trade(),
-            '2-WAY SPLIT TRADE': two_way_split_trade(),
-            '3-WAY SPLIT TRADE': three_way_split_trade(),
-            'MINIMAL TRADE': minimal_trade()
+            'SINGLE TRADE': single_trade,
+            '2-WAY SPLIT TRADE': two_way_split_trade,
+            '3-WAY SPLIT TRADE': three_way_split_trade,
+            'MINIMAL TRADE': minimal_trade
         }
 
-        trades = trade_strategy_funcs.get(modif_trade['trade_strategy'],'Failed to Capture Trade Strategy')
+        trades = trade_strategy_funcs.get\
+            (modif_trade['trade_strategy'],'Failed to Capture Trade Strategy')()
 
 
         for trade in trades:
@@ -300,8 +384,6 @@ class Mt5Mvc():
             print(self.mt5_mvc.last_error())
             print(result._asdict().items())
             time.sleep(0.1)
-
-
 
 TIMEFRAMES_PERIODS = {
                 1: 'TIMEFRAME_M1', 5 : 'TIMEFRAME_M5', 15 : 'TIMEFRAME_M15',

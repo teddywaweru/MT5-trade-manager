@@ -1,13 +1,18 @@
 """[summary]
 """
 import sys
+import time
 import pandas as pd
-import pandas_ta as ta
+
+
+# print(f'{time.asctime(time.localtime())}: Start loading pandas_ta')
+# import pandas_ta as ta
+from pandas_ta import atr
+# print(f'{time.asctime(time.localtime())}: Finished loading pandas_ta')
 # from DWX_ZeroMQ_Connector_v2_0_1_RC8 import DWX_ZeroMQ_Connector
 
 
 #converting data formats
-
 class DataManipulation():
     """[summary]
     """
@@ -32,7 +37,8 @@ class DataManipulation():
 
 
 
-        data_df['atr'] = data_df.ta.atr(length = 14, mamode = 'sma', append = False)
+        data_df['atr'] = atr(data_df['high'],data_df['low'], data_df['close'],\
+                                length = 14, mamode = 'sma', append = False)
         '''
         dema, ema, fwma, hma, linreg, midpoint, pwma, rma,
             sinwma, sma, swma, t3, tema, trima, vidya, wma, zlma
