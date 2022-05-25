@@ -32,7 +32,7 @@ class RiskManagement():
         self.trade_dict = new_trade_dict    #Dict containing the new trade's details
 
         if risk_ratio is None:
-            risk_ratio = 0.02   # Default value for risk. >1% of the account.
+            risk_ratio = 0.06   # Default value for risk. >1% of the account.
         self.risk_ratio = risk_ratio
 
         self.risk_amount = None         #Determines stop loss placement
@@ -120,7 +120,7 @@ class RiskManagement():
                         else 1 / ((self.symbol_bid + self.symbol_ask) / 2)
 
                 #ntended for XAG & JPY calculations.
-                if self.symbol_info['digits'] == 3:
+                if self.symbol_info['digits'] == 3 and 'JPY' in self.symbol:
                     self.symbol_value = self.symbol_value / 0.01
 
 
@@ -171,7 +171,7 @@ class RiskManagement():
                                         else 1 / ((self.sec_symbol_bid + self.sec_symbol_ask) / 2)
 
                     #ntended for XAG & JPY calculations.
-                    if self.symbol_info['digits'] == 3:
+                    if self.symbol_info['digits'] == 3 and 'JPY' in self.sec_symbol:
                         self.symbol_value = self.symbol_value / 0.01
 
 
@@ -213,8 +213,14 @@ class RiskManagement():
             if self.symbol_info['trade_calc_mode'] in [0]:
                 self.lot_size = self.lot_size * self.symbol_info['point'] \
                                 * 10**self.symbol_info['digits']
+
+                # For XAG, contract size is taken as 5000 typicaly, & this is required to 
+                # be standardized for the lot size to be valid.
+                if 'XAG' in self.symbol:
+                    self.lot_size = self.lot_size / (self.symbol_info['trade_contract_size'] * self.symbol_info['point'])
                 # self.lot_size = self.lot_size * self.symbol_info['point'] \
                 #                 * self.symbol_info['trade_contract_size']
+
 
             elif self.symbol_info['trade_calc_mode'] in [2,4]:
                 self.lot_size = self.lot_size /  self.symbol_info['point']
