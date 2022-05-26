@@ -32,7 +32,7 @@ class RiskManagement():
         self.trade_dict = new_trade_dict    #Dict containing the new trade's details
 
         if risk_ratio is None:
-            risk_ratio = 0.06   # Default value for risk. >1% of the account.
+            risk_ratio = 0.05   # Default value for risk. >1% of the account.
         self.risk_ratio = risk_ratio
 
         self.risk_amount = None         #Determines stop loss placement
@@ -48,7 +48,7 @@ class RiskManagement():
         self.symbol_info = symbol_info
 
         if self.symbol_info['digits'] == 1:
-            self.symbol_info['point'] = 0.01      #Static declarations for singular points scenarios
+            self.symbol_info['point'] = 0.3      #Static declarations for singular points scenarios
 
         self.symbol = self.symbol_info['name']
 
@@ -196,7 +196,6 @@ class RiskManagement():
             # Calculate the Pip Value based on the new trade to be taken, ie.
             # Relating the risked amount (%Risk) to the risked pips
             # (stoplossMultiplier * ATR_in_pips)
-            atr_in_pips = self.atr_in_points / 10
             self.calc_pip_value = self.risk_amount / (self.atr_in_points * self.sl_multiplier)
 
 
@@ -209,15 +208,17 @@ class RiskManagement():
             # The TRADE_CALC_MODE enumeration is used for obtaining information
             # about how the margin requirements for a symbol are calculated.
             # FOR CFDs & Crypto, the leverage is not included in the margin calculation
-            #https://www.mql5.com/en/docs/constants/environment_state/marketinfoconstants#:~:text=symbol%20are%20calculated.-,ENUM_SYMBOL_CALC_MODE,-Identifier
+
+            # https://www.mql5.com/en/docs/constants/environment_state/marketinfoconstants
             if self.symbol_info['trade_calc_mode'] in [0]:
                 self.lot_size = self.lot_size * self.symbol_info['point'] \
                                 * 10**self.symbol_info['digits']
 
-                # For XAG, contract size is taken as 5000 typicaly, & this is required to 
+                # For XAG, contract size is taken as 5000 typicaly, & this is required to
                 # be standardized for the lot size to be valid.
                 if 'XAG' in self.symbol:
-                    self.lot_size = self.lot_size / (self.symbol_info['trade_contract_size'] * self.symbol_info['point'])
+                    self.lot_size = self.lot_size / \
+                        (self.symbol_info['trade_contract_size'] * self.symbol_info['point'])
                 # self.lot_size = self.lot_size * self.symbol_info['point'] \
                 #                 * self.symbol_info['trade_contract_size']
 

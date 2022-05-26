@@ -5,10 +5,8 @@ _summary_
 
 import time
 from math import ceil
-print(f'{time.asctime(time.localtime())}: Start loading pandas')
 # import pandas as pd
 from pandas import Timestamp, Timedelta, DataFrame, to_datetime
-print(f'{time.asctime(time.localtime())}: Finish loading pandas')
 
 # from dataclasses import dataclass
 
@@ -108,9 +106,10 @@ class Mt5Mvc():
 
         new_trade_dict['end'] = Timestamp.now()
 
-        new_trade_dict['instr_type'] = 'curr_mtl' if new_trade_dict['symbol'] in self.curr_mtl_pairs \
-                                    else 'comm_indcs' if new_trade_dict['symbol'] in self.comm_indcs \
-                                    else None
+        new_trade_dict['instr_type'] = \
+                'curr_mtl' if new_trade_dict['symbol'] in self.curr_mtl_pairs \
+                else 'comm_indcs' if new_trade_dict['symbol'] in self.comm_indcs \
+                else None
 
         # Update History_DB. Daily Data selected by default.
         #A00 Change code to work for various timeframes.
@@ -126,7 +125,8 @@ class Mt5Mvc():
         # account balance
         # symbol
         self.trade_risk_calc = RiskManagement(mt5 = self.mt5_mvc,
-                                        new_trade_dict= new_trade_dict,             # New Trade details
+                                        # New Trade details
+                                        new_trade_dict= new_trade_dict,
                                         risk_ratio= None,
                                         account_info= account_info,
                                         new_trade_df= trade_hist_df,
@@ -148,14 +148,13 @@ class Mt5Mvc():
         _symbol = hist_request.get('symbol', 'EURUSD')
         #A00 Change timestamp from daily.
         # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15
-        _timeframe = '{}.{}'.format(MT5_OBJ_STRING,
-                                        TIMEFRAMES_PERIODS[hist_request.get('timeframe', 1440)])
+        _timeframe = f"{MT5_OBJ_STRING}.{TIMEFRAMES_PERIODS[hist_request.get('timeframe', 1440)]}"
 
         #ADD able to add multiple requests???
         #create the label in the History_DB keys
         #A00 change timestamp. add try except loops
-        hist_db_key = '{}_{}'.format(hist_request['symbol'],
-                                    TIMEFRAMES_PERIODS[hist_request['timeframe']])
+        hist_db_key = f"{hist_request['symbol']}_{TIMEFRAMES_PERIODS[hist_request['timeframe']]}"
+
         _start = hist_request.get('start', None)
         _end = hist_request.get('end',Timestamp.now())
 
@@ -166,7 +165,8 @@ class Mt5Mvc():
 
         idx_n = 1
         while len(hist_rates) < 30:
-            #Data duration statically selected to be set to be at least 30 data points from current time
+            #Data duration statically selected to be set to be at least
+            # 30 data points from current time
             hist_request['start'] = (
                 Timestamp.now() - Timedelta(minutes = (hist_request['timeframe'] * 48 * idx_n)))
 
@@ -213,19 +213,20 @@ class Mt5Mvc():
         trade_type = f"{MT5_OBJ_STRING}.{MT5_ORDER_TYPES[new_trade['type']]}"
 
         if trade_action == 'self.mt5_mvc.TRADE_ACTION_DEAL':
-            new_trade['price'] =  symbol_info['ask'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_BUY' \
-                        else symbol_info['bid'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_SELL' \
-                        else None
+            new_trade['price'] = \
+                symbol_info['ask'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_BUY' \
+                else symbol_info['bid'] if trade_type == 'self.mt5_mvc.ORDER_TYPE_SELL' \
+                else None
 
         else:
             new_trade['price'] = new_trade['price']
 
         #Modify Split Ratio based on tmeframe.
         if modif_trade['timeframe'] < 1440:         #Daily Timeframe
-            modif_trade['split_ratio'] = 0.9
+            modif_trade['split_ratio'] = 0.8
         else: modif_trade['split_ratio'] = 0.5
-        
-        
+
+
 
         new_trade['sl'] = new_trade['price'] - new_trade['SL_points'] \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
@@ -242,8 +243,9 @@ class Mt5Mvc():
         #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
         #         else new_trade['price'] - new_trade['TP'] * symbol_info['point']
 
-            
-        #symbol_info['point'] holds the number of signficant decimal points for the financial instrument
+
+        #symbol_info['point'] holds the number of
+        # signficant decimal points for the financial instrument
         new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['TP_points']) \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
                 else new_trade['price'] - (3 * new_trade['TP_points'])
@@ -251,13 +253,7 @@ class Mt5Mvc():
         new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['TP_points']) \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
                 else new_trade['price'] - (5 * new_trade['TP_points'])
-        # new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['TP'] * symbol_info['point']) \
-        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-        #         else new_trade['price'] - (3 * new_trade['tp'] * symbol_info['point'])
 
-        # new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['TP'] * symbol_info['point']) \
-        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-        #         else new_trade['price'] - (5 * new_trade['tp'] * symbol_info['point'])
 
         type_filling = f"{MT5_OBJ_STRING}.{MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']]}"
 
@@ -290,12 +286,13 @@ class Mt5Mvc():
 
         #Declare multiple functions for the different trade strategies that could be implemented
 
-        
+
         def minimal_trade():
             new_trade.update(
                 {
+                    #Trade @ 10% of the Previous Risk Amount
                     'volume': ceil(new_trade['volume'] * 0.1 / symbol_info['volume_step']) \
-                            * symbol_info['volume_step']     #Trade @ 10% of the Previous Risk Amount
+                            * symbol_info['volume_step']
                 }
             )
 
@@ -312,8 +309,8 @@ class Mt5Mvc():
         def two_way_split_trade():
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
             new_trade_1['volume'] = \
-                ceil(new_trade['volume'] * modif_trade['split_ratio'] / symbol_info['volume_step']) \
-                * symbol_info['volume_step']
+                ceil(new_trade['volume'] * modif_trade['split_ratio'] \
+                    / symbol_info['volume_step']) * symbol_info['volume_step']
             #         new_trade['symbol'] in CURRENCY_METAL_PAIRS \
             #         else ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10 if \
             #         new_trade['symbol'] in COMMODITIES_INDICES \

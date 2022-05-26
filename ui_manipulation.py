@@ -6,22 +6,19 @@
 
 import sys
 import time
-print('{}: Start of Loading UI Manipulation Imports'.format(time.asctime(time.localtime())))
+import asyncio
+import traceback
+from PyQt5 import QtWidgets
 # from pathlib import Path
-from PyQt5 import QtCore, QtGui, QtWidgets
-print('{}: Finished of Loading UI Manipulation Imports'.format(time.asctime(time.localtime())))
 # from PySide6 import QtCore, QtGui, QtWidgets
 # from PySide6.QtCore import Slot, Qt
 from UI_templates import main_window
-print('{}: Finished Loading Main Window'.format(time.asctime(time.localtime())))
 # from dwx_MVC import DwxModel
 from mt_connector import connect_mt as conn_mt
 from table_MVC import TableModel
 # import pandas as pd
-import asyncio
-import traceback
 
-print('{}: Start of Loading UI Manipulation Code'.format(time.asctime(time.localtime())))
+print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
 
 
 class CallUi(QtWidgets.QMainWindow):
@@ -36,7 +33,7 @@ class CallUi(QtWidgets.QMainWindow):
         # Load DWX Connection Object
         # self.conn_api_mvc = DwxModel()
         self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
-        
+
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
@@ -71,7 +68,9 @@ class CallUi(QtWidgets.QMainWindow):
 
         #List of Timeframe buttons. For iterations
         self.timeframe_btns = (
-            self.ui.MIN_1_BTN,self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
+            self.ui.MIN_1_BTN,self.ui.MIN_5_BTN,
+            self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN,
+            self.ui.MIN_1440_BTN,
         )
 
         #ist of instrument comboboxes. For iterations
@@ -87,9 +86,6 @@ class CallUi(QtWidgets.QMainWindow):
         #Generate available symbols from  current MT5 account
         self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
 
-
-        # self.ui.TEST_COMBOBOX.addItems([i._asdict()['name'] for i in test_combo_list if 'forex' in i._asdict()['path'].lower()])
-        # self.ui.TEST_COMBOBOX.addItems([i._asdict()['name'] for i in test_combo_list if 'forex' in i._asdict()['path'].lower()])
 
         # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
             # print(True)
@@ -117,7 +113,9 @@ class CallUi(QtWidgets.QMainWindow):
         """
         trades = self.conn_api_mvc.get_current_trades()
         self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
-        self.ui.CURRENT_TRADES_TABLE.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.ui.CURRENT_TRADES_TABLE \
+                .horizontalHeader() \
+                .setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
 
     def disable_execute_trade_btn(self):
@@ -132,7 +130,7 @@ class CallUi(QtWidgets.QMainWindow):
         Args:
             instr_combobox (combobox Object): Combobox object that created the signal
         """
-        #Disable the Execute button.      
+        #Disable the Execute button.
         self.disable_execute_trade_btn()
 
         #If current text is None, return
@@ -217,7 +215,7 @@ class CallUi(QtWidgets.QMainWindow):
             order_timeframe ([type]): [description]
         """
 
-        #Disable the Execute button.      
+        #Disable the Execute button.
         self.disable_execute_trade_btn()
 
 
@@ -265,10 +263,10 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.ui.TWO_WAY_SPLIT_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.TWO_WAY_SPLIT_TRADE_BTN))
-        
+
         self.ui.THREE_WAY_SPLIT_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.THREE_WAY_SPLIT_TRADE_BTN))
-        
+
         self.ui.SINGLE_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.SINGLE_TRADE_BTN))
 
@@ -338,7 +336,7 @@ class CallUi(QtWidgets.QMainWindow):
                 timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
 
                 new_trade_dict['timeframe'] = timeframe
-        
+
         if timeframe == '':
             print('Select an order Timeframe.')
             return
@@ -364,7 +362,7 @@ class CallUi(QtWidgets.QMainWindow):
 
                 new_trade_dict['order'] = order_type
 
-        
+
         if order_type == '':
             print('Select an Order Type.')
             return
@@ -372,7 +370,7 @@ class CallUi(QtWidgets.QMainWindow):
         #For orders that are not instant,
         # the price limit/stop needs to be specified as a valid float.
         elif order_type not in ['SELL','BUY']:
-            
+
             if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() != '':
                 try:
                     buy_sell_limit = float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText())
@@ -406,12 +404,6 @@ class CallUi(QtWidgets.QMainWindow):
             # model = QtGui.QStandardItemModel()
             # model.setHorizontalHeaderLabels(hist_df.columns)
 
-            
-
-
-            # self.ui.HIST_DF_TABLE.setHorizontalHeader([1,2,3,4])
-            # self.ui.HIST_DF_TABLE.setHorizontalHeader([i for i in hist_df.columns if i not in ['Index']])
-            # self.ui.HIST_DF_TABLE.setHorizontalHeader(model)
 
             # self.ui.HIST_DF_TABLE.setVisible(True)
             self.ui.HIST_DF_TABLE.setModel(TableModel(hist_df))
@@ -443,11 +435,11 @@ class CallUi(QtWidgets.QMainWindow):
         for i in self.timeframe_btns:
             if i.isChecked():
                 timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
-        
+
         if timeframe == '':
             print('Select an order Timeframe.')
             return
-            
+
 
         try:
             self.conn_api_mvc.new_trade(
@@ -455,8 +447,9 @@ class CallUi(QtWidgets.QMainWindow):
                 'action': 'OPEN',
                 'type': self.prep_new_trade.trade_dict['order'],      #1 for SELL, O for BUY
                 'symbol': self.prep_new_trade.symbol,
+                #Refers to current price value
                 'price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
-                     float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),                  #Refers to current price value
+                     float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),
                 # SL/TP in POINTS, not pips.
                 'SL_points': self.prep_new_trade.atr * self.prep_new_trade.sl_multiplier,
                 'TP_points': self.prep_new_trade.atr * self.prep_new_trade.tp_multiplier,
