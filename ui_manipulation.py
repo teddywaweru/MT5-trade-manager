@@ -451,9 +451,15 @@ class CallUi(QtWidgets.QMainWindow):
                 'price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
                      float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),
                 # SL/TP in POINTS, not pips.
-                'SL_points': self.prep_new_trade.atr * self.prep_new_trade.sl_multiplier,
-                'TP_points': self.prep_new_trade.atr * self.prep_new_trade.tp_multiplier,
-                'comment': self.ui.NEW_TRADE_COMMENT_VALUE.toPlainText(),
+                'SL_points':
+                    self.prep_new_trade.atr * self.prep_new_trade.sl_multiplier,
+
+                'TP_points':
+                    self.prep_new_trade.atr * self.prep_new_trade.tp_multiplier,
+
+                'comment':
+                    f'{str(timeframe)}_{self.ui.NEW_TRADE_COMMENT_VALUE.toPlainText()}',
+                    
                 'volume': round(self.prep_new_trade.lot_size, 2),
                 'magic': 123456,
                 'ticket': 0

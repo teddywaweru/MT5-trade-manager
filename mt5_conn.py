@@ -207,7 +207,7 @@ class Mt5Mvc():
         # time.sleep(0.5)
 
         trade_action = f"{MT5_OBJ_STRING}.{MT5_TRADE_ACTIONS['instant']}" \
-                            if new_trade['price'] == 0 \
+                            if new_trade['type'] in ['BUY','SELL'] \
                             else f"{MT5_OBJ_STRING}.{MT5_TRADE_ACTIONS['pending']}"
 
         trade_type = f"{MT5_OBJ_STRING}.{MT5_ORDER_TYPES[new_trade['type']]}"
@@ -223,7 +223,7 @@ class Mt5Mvc():
 
         #Modify Split Ratio based on tmeframe.
         if modif_trade['timeframe'] < 1440:         #Daily Timeframe
-            modif_trade['split_ratio'] = 0.8
+            modif_trade['split_ratio'] = 0.9
         else: modif_trade['split_ratio'] = 0.5
 
 
@@ -298,11 +298,33 @@ class Mt5Mvc():
 
             return (new_trade,)
 
+        def split_trades_by_vol(new_trade):
+            tot_vol = rem_vol = new_trade['volume']
+            split_trades = []
+
+            while tot_vol > symbol_info['volume_max']:
+                trade = new_trade
+                trade['volume'] = symbol_info['volume_max']
+
+                split_trades.append(trade.copy())
+
+                rem_vol -= symbol_info['volume_max']
+
+                if rem_vol <= symbol_info['volume_max']:
+                    trade['volume'] = rem_vol
+                    split_trades.append(trade.copy())
+                    break
+            return split_trades
 
         def single_trade():
             new_trade['volume'] = \
             ceil(new_trade['volume'] / symbol_info['volume_step']) \
             * symbol_info['volume_step']
+
+            if new_trade['volume'] > symbol_info['volume_max']:
+                split_trade = split_trades_by_vol(new_trade)
+
+                return (split_trade,)
 
             return (new_trade,)
 
@@ -311,25 +333,27 @@ class Mt5Mvc():
             new_trade_1['volume'] = \
                 ceil(new_trade['volume'] * modif_trade['split_ratio'] \
                     / symbol_info['volume_step']) * symbol_info['volume_step']
-            #         new_trade['symbol'] in CURRENCY_METAL_PAIRS \
-            #         else ceil((new_trade['volume'] * modif_trade['split_ratio'] *10))/10 if \
-            #         new_trade['symbol'] in COMMODITIES_INDICES \
-            #             else None
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_2['volume'] = \
                 ceil((new_trade['volume'] - new_trade_1['volume']) / symbol_info['volume_step']) \
                 * symbol_info['volume_step']
-                # if new_trade['symbol'] in CURRENCY_METAL_PAIRS \
-                # else ceil((new_trade['volume'] - new_trade_1['volume']) *10)/10 \
-                #     if new_trade['symbol'] in COMMODITIES_INDICES \
-                #         else None
 
             new_trade_2.update(
                 {
                 'tp': new_trade['scale_tp_by_5']
                 }
             )
+
+            if new_trade_1['volume'] > symbol_info['volume_max']:
+                split_trade_1 = split_trades_by_vol(new_trade_1)
+
+                if new_trade_2['volume'] > symbol_info['volume_max']:
+                    split_trade_2 = split_trades_by_vol(new_trade_2)
+
+                    return (split_trade_1 + split_trade_2)
+                
+                return (split_trade_1 + [new_trade_2])
 
             return (new_trade_1,new_trade_2)
 
@@ -358,6 +382,22 @@ class Mt5Mvc():
                     'tp': new_trade['scale_tp_by_5']
                 }
             )
+
+            if new_trade_1['volume'] > symbol_info['volume_max']:
+                split_trade_1 = split_trades_by_vol(new_trade_1)
+
+                if new_trade_2['volume'] > symbol_info['volume_max']:
+                    split_trade_2 = split_trades_by_vol(new_trade_2)
+
+                    if new_trade_3['volume'] > symbol_info['volume_max']:
+                        split_trade_3 = split_trades_by_vol(new_trade_3)
+
+                        return (split_trade_1 + split_trade_2 + split_trade_3)
+
+                    return (split_trade_1 + split_trade_2 +[new_trade_3])
+                
+                return (split_trade_1 + [new_trade_2, new_trade_3])
+
 
             return  (new_trade_1, new_trade_2, new_trade_3)
 
