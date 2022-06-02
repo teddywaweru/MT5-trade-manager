@@ -127,7 +127,7 @@ class Mt5Mvc():
         self.trade_risk_calc = RiskManagement(mt5 = self.mt5_mvc,
                                         # New Trade details
                                         new_trade_dict= new_trade_dict,
-                                        risk_ratio= None,
+                                        risk= new_trade_dict['risk'],
                                         account_info= account_info,
                                         new_trade_df= trade_hist_df,
                                         hist_db_key= hist_db_key,
@@ -221,39 +221,37 @@ class Mt5Mvc():
         else:
             new_trade['price'] = new_trade['price']
 
-        #Modify Split Ratio based on tmeframe.
-        if modif_trade['timeframe'] < 1440:         #Daily Timeframe
-            modif_trade['split_ratio'] = 0.9
-        else: modif_trade['split_ratio'] = 0.5
-
-
 
         new_trade['sl'] = new_trade['price'] - new_trade['SL_points'] \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
                 else new_trade['price'] + new_trade['SL_points']
 
-        new_trade['tp'] = new_trade['price'] + new_trade['TP_points'] \
+        new_trade['tp'] = \
+            new_trade['price'] + new_trade['TP_points'] * modif_trade['tp_multiplier_1'] \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - new_trade['TP_points']
-        # new_trade['sl'] = new_trade['price'] - new_trade['SL'] * symbol_info['point'] \
-        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-        #         else new_trade['price'] + new_trade['SL'] * symbol_info['point']
-
-        # new_trade['tp'] = new_trade['price'] + new_trade['TP'] * symbol_info['point'] \
-        #     if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-        #         else new_trade['price'] - new_trade['TP'] * symbol_info['point']
+                else new_trade['price'] - new_trade['TP_points'] * modif_trade['tp_multiplier_1']
 
 
         #symbol_info['point'] holds the number of
         # signficant decimal points for the financial instrument
         new_trade['scale_tp_by_3'] = new_trade['price'] + (3 * new_trade['TP_points']) \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - (3 * new_trade['TP_points'])
+                else new_trade['price'] - (modif_trade['tp_multiplier_2'] * new_trade['TP_points'])
 
         new_trade['scale_tp_by_5'] = new_trade['price'] + (5 * new_trade['TP_points']) \
             if new_trade['type'] in ['BUY', 'BUY LIMIT', 'BUY STOP']\
-                else new_trade['price'] - (5 * new_trade['TP_points'])
+                else new_trade['price'] - (modif_trade['tp_multiplier_3'] * new_trade['TP_points'])
 
+
+        #Modify Split Ratio based on timeframe.
+        #currently methodology for scalping scenarios
+        #Essentially, the functionality should be availalble 
+        # on the GUI
+        if modif_trade['timeframe'] < 1440:         #Daily Timeframe
+            modif_trade['split_ratio'] = 0.9
+            # new_trade['tp'] = new_trade['scale_tp_by_3']
+
+        else: modif_trade['split_ratio'] = 0.5
 
         type_filling = f"{MT5_OBJ_STRING}.{MT5_ORDER_TYPE_FILLING[symbol_info['filling_mode']]}"
 

@@ -23,7 +23,7 @@ class RiskManagement():
     def __init__(self,
                 mt5= None,
                 new_trade_dict = None,
-                risk_ratio = None,
+                risk = None,
                 account_info = None,
                 new_trade_df = None,
                 hist_db_key = None,
@@ -31,9 +31,9 @@ class RiskManagement():
 
         self.trade_dict = new_trade_dict    #Dict containing the new trade's details
 
-        if risk_ratio is None:
-            risk_ratio = 0.02   # Default value for risk. >1% of the account.
-        self.risk_ratio = risk_ratio
+        if risk is None:
+            risk = 0.02   # Default value for risk. >1% of the account.
+        self.risk = risk
 
         self.risk_amount = None         #Determines stop loss placement
 
@@ -171,7 +171,7 @@ class RiskManagement():
                                         else 1 / ((self.sec_symbol_bid + self.sec_symbol_ask) / 2)
 
                     #ntended for XAG & JPY calculations.
-                    if self.symbol_info['digits'] == 3 and 'JPY' in self.sec_symbol:
+                    if 'JPY' in self.sec_symbol:
                         self.symbol_value = self.symbol_value / 0.01
 
 
@@ -181,11 +181,11 @@ class RiskManagement():
 
             #Include spread value into atr
             #AFF may be included
-            # self.atr += self.symbol_info['spread'] * self.symbol_info['point']
+            # self.atr = self.atr + self.symbol_info['spread'] * self.symbol_info['point']
 
 
             # Calculate risk amount of the account balance
-            self.risk_amount = self.account_info['balance'] * self.risk_ratio
+            self.risk_amount = self.account_info['balance'] * self.risk
 
             #Convert ATR to Points
 

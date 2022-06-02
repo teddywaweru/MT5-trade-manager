@@ -9,6 +9,9 @@ import time
 import asyncio
 import traceback
 from PyQt5 import QtWidgets
+from PyQt5.QtChart import QChart, QChartView, QLineSeries
+from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtGui import QPainter
 # from pathlib import Path
 # from PySide6 import QtCore, QtGui, QtWidgets
 # from PySide6.QtCore import Slot, Qt
@@ -85,6 +88,34 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Generate available symbols from  current MT5 account
         self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
+
+
+        #Graphs
+        # series = QLineSeries()
+
+        # series.append(0,6)
+        # series.append(2,4)
+        # series.append(3,8)
+        # series.append(6,10)
+
+        # series << QPointF(11,1) << QPointF(13,6) << QPointF(15,6) << QPointF(17,8)
+
+        # chart = QChart()
+        # chart.addSeries(series)
+        # chart.setAnimationOptions(QChart.SeriesAnimations)
+        # chart.setTitle('Line Chart Example')
+
+        # chart.legend().setVisible(True)
+
+        # chart.legend().setAlignment(Qt.AlignBottom)
+
+        # chartview = QChartView(chart)
+
+        # chartview.setRenderHint(QPainter.Antialiasing)
+
+        # self.setCentralWidget(chartview)
+
+
 
 
         # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
@@ -206,6 +237,21 @@ class CallUi(QtWidgets.QMainWindow):
                             'border-width: 2px;'
                             'border-color: beige;'
                             )
+
+            if order_strategy in \
+            [self.ui.MINIMAL_TRADE_BTN, self.ui.SINGLE_TRADE_BTN]:
+                pass
+            else:
+                self.ui.TP_LEVEL_1_LABEL.setEnabled(True)
+                self.ui.TP_LEVEL_1_spinBox.setEnabled(True)
+                self.ui.TP_LEVEL_2_LABEL.setEnabled(True)
+                self.ui.TP_LEVEL_2_spinBox.setEnabled(True)
+
+                if order_strategy == self.ui.THREE_WAY_SPLIT_TRADE_BTN:
+                    self.ui.TP_LEVEL_3_LABEL.setEnabled(True)
+                    self.ui.TP_LEVEL_3_spinBox.setEnabled(True)
+
+
         else: order_strategy.setStyleSheet('')
 
     def order_timeframe_btn_clicked(self, order_timeframe):
@@ -320,12 +366,19 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.symbol_groups_combobox_text_changed(self.ui.SYMBOL_GROUPS_COMBOBOX)
         )
 
+    # def setup_combobox_connect(self):
+    #     self.ui.TP_LEVEL_spinBox.connect()
+
     def prepare_new_trade(self):
         """[summary]
         """
         symbols_combobox = self.ui.SYMBOLS_COMBOBOX
         new_trade_dict = {}
         new_trade_dict['symbol_group']=  self.ui.SYMBOL_GROUPS_COMBOBOX.currentText()
+
+        # Risk in ratio form
+        new_trade_dict['risk'] = self.ui.RISK_doubleSpinBox.value() / 100
+
 
 
         #Iterate through the order timeframes to find the selected one
@@ -468,7 +521,10 @@ class CallUi(QtWidgets.QMainWindow):
                     'trade_strategy': trade_strategy,
                     'timeframe': timeframe,
                     'split_ratio': 0.9,
-                    'split_ratio_2' : 0.5
+                    'split_ratio_2' : 0.5,
+                    'tp_multiplier_1' : self.ui.TP_LEVEL_1_spinBox.value(),
+                    'tp_multiplier_2' : self.ui.TP_LEVEL_2_spinBox.value(),
+                    'tp_multiplier_3' : self.ui.TP_LEVEL_3_spinBox.value()
                 },
             )
         except Exception:
