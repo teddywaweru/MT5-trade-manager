@@ -73,7 +73,7 @@ class CallUi(QtWidgets.QMainWindow):
         self.timeframe_btns = (
             self.ui.MIN_1_BTN,self.ui.MIN_5_BTN,
             self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN,
-            self.ui.MIN_1440_BTN,
+            self.ui.MIN_240_BTN, self.ui.MIN_1440_BTN,
         )
 
         #ist of instrument comboboxes. For iterations
@@ -164,9 +164,9 @@ class CallUi(QtWidgets.QMainWindow):
         #Disable the Execute button.
         self.disable_execute_trade_btn()
 
-        #If current text is None, return
-        if symbol_group_combobox.currentText() == '':
-            return
+        #Check if the symbols combobox has any current symbols, & clear if True 
+        if self.ui.SYMBOLS_COMBOBOX:
+            self.ui.SYMBOLS_COMBOBOX.clear()
 
         #Dict matching group symbols to GetSymbols objects
         symbol_groups_dict = {
@@ -179,9 +179,11 @@ class CallUi(QtWidgets.QMainWindow):
             'FUTURES': self.symbols.futures,
         }
 
+        #While the currentText is not similar to known SYMBOL_GROUPS, return
+        if symbol_group_combobox.currentText() not in symbol_groups_dict:
+            return
 
-        #Else update the symbols combobox with list of the symbols in selected group
-        self.ui.SYMBOLS_COMBOBOX.clear()
+        #Update the symbols combobox with list of the symbols in selected group
         self.ui.SYMBOLS_COMBOBOX.addItems(symbol_groups_dict[symbol_group_combobox.currentText()])
 
         print(f'Current Symbol Group to trade: {symbol_group_combobox.currentText()}.')
@@ -332,13 +334,18 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_30_BTN)
         )
 
+        self.ui.MIN_60_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
+        )
+
+        self.ui.MIN_240_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_240_BTN)
+        )
+
         self.ui.MIN_1440_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1440_BTN)
         )
 
-        self.ui.MIN_60_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
-        )
 
         self.ui.CURRENT_TRADES_TABLE.doubleClicked.connect(self.clicked_table)
 
