@@ -72,8 +72,9 @@ class CallUi(QtWidgets.QMainWindow):
         #List of Timeframe buttons. For iterations
         self.timeframe_btns = (
             self.ui.MIN_1_BTN,self.ui.MIN_5_BTN,
-            self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN,
-            self.ui.MIN_240_BTN, self.ui.MIN_1440_BTN,
+            self.ui.MIN_15_BTN, self.ui.MIN_30_BTN,
+            self.ui.MIN_60_BTN, self.ui.MIN_240_BTN,
+            self.ui.MIN_1440_BTN,
         )
 
         #ist of instrument comboboxes. For iterations
@@ -322,12 +323,16 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN)
         )
 
+        self.ui.MIN_1_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
+        )
+
         self.ui.MIN_5_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
         )
 
-        self.ui.MIN_1_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
+        self.ui.MIN_15_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_15_BTN)
         )
 
         self.ui.MIN_30_BTN.clicked.connect(
