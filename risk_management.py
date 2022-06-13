@@ -26,7 +26,6 @@ class RiskManagement():
                 risk = None,
                 account_info = None,
                 new_trade_df = None,
-                hist_db_key = None,
                 symbol_info= None):
 
         self.trade_dict = new_trade_dict    #Dict containing the new trade's details
@@ -43,20 +42,12 @@ class RiskManagement():
 
         self.account_info = account_info#Account information
 
-        self.hist_db_key = hist_db_key#instrument key reference ie EURUSD_D1
-
         self.symbol_info = symbol_info
 
         if self.symbol_info['digits'] == 1:
             self.symbol_info['point'] = 0.3      #Static declarations for singular points scenarios
 
         self.symbol = self.symbol_info['name']
-
-        #Partitioning the symbol EURUSD_D1 to obtain instrument symbol
-        # self.symbol = hist_db_key.partition('_')[0]
-
-        #Partitioning the symbol EURUSD_D1 to obtain timeframe
-        self.timeframe = hist_db_key.partition('_')[2]
 
         self.symbol_bid = None
 
@@ -78,7 +69,12 @@ class RiskManagement():
 
         self.lot_size = None
 
-        self.sl_multiplier = 3
+       
+       #Statically declare SL_Multiplier.
+    #    1.5 for daily timeframe orders, $ for lower timeframes
+       #ADD user input.
+        self.sl_multiplier = 3  if self.trade_dict['timeframe'] < 1440 \
+                                    else 1.5
 
         self.tp_multiplier = 1
 

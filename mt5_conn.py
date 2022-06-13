@@ -111,10 +111,7 @@ class Mt5Mvc():
                 else 'comm_indcs' if new_trade_dict['symbol'] in self.comm_indcs \
                 else None
 
-        # Update History_DB. Daily Data selected by default.
-        #A00 Change code to work for various timeframes.
-        # self.dwx._DWX_MTX_SEND_HIST_REQUEST_(_symbol, 1440)
-        hist_db_key, trade_hist_df = self.send_hist_request(new_trade_dict)
+        trade_hist_df = self.send_hist_request(new_trade_dict)
 
         #Obtain Recent Account Information. Account Balance is most critical
         account_info = self.mt5_mvc.account_info()._asdict()
@@ -130,7 +127,6 @@ class Mt5Mvc():
                                         risk= new_trade_dict['risk'],
                                         account_info= account_info,
                                         new_trade_df= trade_hist_df,
-                                        hist_db_key= hist_db_key,
                                         symbol_info= symbol_info).calc_params()
 
 
@@ -145,15 +141,10 @@ class Mt5Mvc():
         if hist_request == {}:
             return print('Empty Request.')
 
-        _symbol = hist_request.get('symbol', 'EURUSD')
+        _symbol = hist_request.get('symbol', None)
         #A00 Change timestamp from daily.
         # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15
         _timeframe = f"{MT5_OBJ_STRING}.{TIMEFRAMES_PERIODS[hist_request.get('timeframe', 1440)]}"
-
-        #ADD able to add multiple requests???
-        #create the label in the History_DB keys
-        #A00 change timestamp. add try except loops
-        hist_db_key = f"{hist_request['symbol']}_{TIMEFRAMES_PERIODS[hist_request['timeframe']]}"
 
         _start = hist_request.get('start', None)
         _end = hist_request.get('end',Timestamp.now())
@@ -188,7 +179,7 @@ class Mt5Mvc():
         #Returns DataFrame with OHLC & atr
         hist_db_df = DataManipulation(hist_db_df).data_df
 
-        return hist_db_key, hist_db_df
+        return hist_db_df
 
 
     def new_trade(self, new_trade, modif_trade):
@@ -259,17 +250,11 @@ class Mt5Mvc():
             {
                 'action': eval(trade_action),
 
-                # 'symbol': new_trade['_symbol'],
-
-                # 'volume': new_trade['_lots'],
-
                 'type': eval(trade_type),
 
                 'deviation': 20,
 
                 'type_filling': eval(type_filling),
-
-                # 'comment': new_trade['_comment']
 
                 # 'type_time': eval('{}.ORDER_TIME_GTC'.format(MT5_OBJ_STRING)),
 
@@ -277,24 +262,7 @@ class Mt5Mvc():
 
             }
         )
-        # remove_keys= ['_action', '_type', '_symbol', '_price', '_SL',\
-        #      '_TP', '_comment', '_magic', '_ticket','_lots']
 
-        # [new_trade.pop(key, None) for key in remove_keys]
-
-        #Declare multiple functions for the different trade strategies that could be implemented
-
-
-        def minimal_trade():
-            new_trade.update(
-                {
-                    #Trade @ 10% of the Previous Risk Amount
-                    'volume': ceil(new_trade['volume'] * 0.1 / symbol_info['volume_step']) \
-                            * symbol_info['volume_step']
-                }
-            )
-
-            return (new_trade,)
 
         def split_trades_by_vol(new_trade):
             tot_vol = rem_vol = new_trade['volume']
@@ -314,10 +282,30 @@ class Mt5Mvc():
                     break
             return split_trades
 
+
+        #Declare multiple functions for the different trade strategies that could be implemented
+
+        def minimal_trade():
+            new_trade.update(
+                {
+                    #Trade @ 10% of the Previous Risk Amount
+                    'volume': ceil(new_trade['volume'] * 0.1 / symbol_info['volume_step']) \
+                            * symbol_info['volume_step'],
+                    'comment': f' {new_trade["comment"]}_1'
+                }
+            )
+
+            return (new_trade,)
+
+
         def single_trade():
-            new_trade['volume'] = \
-            ceil(new_trade['volume'] / symbol_info['volume_step']) \
-            * symbol_info['volume_step']
+            new_trade.update(
+                {
+                    'volume': ceil(new_trade['volume'] / symbol_info['volume_step']) \
+                            * symbol_info['volume_step'],
+                    'comment': f'{new_trade["comment"]}_1'
+                }
+            )
 
             if new_trade['volume'] > symbol_info['volume_max']:
                 split_trade = split_trades_by_vol(new_trade)
@@ -328,18 +316,23 @@ class Mt5Mvc():
 
         def two_way_split_trade():
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade
-            new_trade_1['volume'] = \
-                ceil(new_trade['volume'] * modif_trade['split_ratio'] \
-                    / symbol_info['volume_step']) * symbol_info['volume_step']
+
+            new_trade_1.update(
+                {
+                    'volume': ceil(new_trade['volume'] * modif_trade['split_ratio'] \
+                            / symbol_info['volume_step']) * symbol_info['volume_step'],
+                    'comment': f'{new_trade["comment"]}_1'
+                }
+            )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
-            new_trade_2['volume'] = \
-                ceil((new_trade['volume'] - new_trade_1['volume']) / symbol_info['volume_step']) \
-                * symbol_info['volume_step']
 
             new_trade_2.update(
                 {
-                'tp': new_trade['scale_tp_by_5']
+                    'volume': ceil((new_trade['volume'] - new_trade_1['volume']) \
+                         / symbol_info['volume_step']) * symbol_info['volume_step'],
+                    'tp': new_trade['scale_tp_by_5'],
+                    'comment': f'{new_trade["comment"]}_2'
                 }
             )
 
@@ -359,25 +352,32 @@ class Mt5Mvc():
         def three_way_split_trade():
             new_trade_1 = new_trade.copy()                      #Larger Proportional Trade (0.8)
             new_trade_1.update(
-                {'volume': new_trade['volume'] * modif_trade['split_ratio'],}
-
+                {
+                    'volume': ceil(new_trade['volume'] * modif_trade['split_ratio'] \
+                            / symbol_info['volume_step']) * symbol_info['volume_step'],
+                    'comment': f'{new_trade["comment"]}_1'
+                }
             )
 
             new_trade_2 = new_trade.copy()                      #Smaller Proportional Trade
+
             new_trade_2.update(
                 {
-                    'volume': new_trade['volume'] \
-                                * (1 - modif_trade['split_ratio']) \
-                                * modif_trade['split_ratio_2'],
-                    'tp': new_trade['scale_tp_by_3']
+                    'volume': ceil((new_trade['volume'] - new_trade_1['volume']) \
+                            * modif_trade['split_ratio'] / symbol_info['volume_step']) \
+                            * symbol_info['volume_step'],
+                    'tp': new_trade['scale_tp_by_5'],
+                    'comment': f'{new_trade["comment"]}_2'
                 }
             )
+
 
             new_trade_3 = new_trade.copy()                      #Smaller Proportional Trade
             new_trade_3.update(
                 {
                     'volume': new_trade['volume'] - new_trade_1['volume'] - new_trade_2['volume'],
-                    'tp': new_trade['scale_tp_by_5']
+                    'tp': new_trade['scale_tp_by_5'],
+                    'comment': f'{new_trade["comment"]}_3'
                 }
             )
 

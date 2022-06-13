@@ -250,7 +250,7 @@ class Ui_MainWindow(object):
         self.INSTANT_EXECUTE_NEW_TRADE_BTN.setObjectName("INSTANT_EXECUTE_NEW_TRADE_BTN")
         self.RISK_doubleSpinBox = QtWidgets.QDoubleSpinBox(self.tab)
         self.RISK_doubleSpinBox.setGeometry(QtCore.QRect(80, 420, 61, 31))
-        self.RISK_doubleSpinBox.setProperty("value", 1.0)
+        self.RISK_doubleSpinBox.setProperty("value", 2.0)
         self.RISK_doubleSpinBox.setObjectName("RISK_doubleSpinBox")
         self.TP_LEVEL_1_spinBox = QtWidgets.QSpinBox(self.tab)
         self.TP_LEVEL_1_spinBox.setEnabled(False)

@@ -23,6 +23,6 @@ if __name__ == "__main__":
     # convert .ui to .py. Only relevant for development stages.
     # print(time.asctime(time.localtime()))
     ui_conv.ui_converter()
-    #setup start
+    # #setup start
     setup()
     
