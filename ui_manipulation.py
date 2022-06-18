@@ -1,20 +1,27 @@
 """[summary]
 """
+
+# pylint: disable=broad-except
+
+
 import sys
 import time
-print('{}: Start of Loading UI Manipulation Imports'.format(time.time()))
-from pathlib import Path
-from PyQt5 import QtCore, QtGui, QtWidgets
+import asyncio
+import traceback
+from PyQt5 import QtWidgets
+from PyQt5.QtChart import QChart, QChartView, QLineSeries
+from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtGui import QPainter
+# from pathlib import Path
 # from PySide6 import QtCore, QtGui, QtWidgets
 # from PySide6.QtCore import Slot, Qt
 from UI_templates import main_window
 # from dwx_MVC import DwxModel
-from dwx_connector import connect_dwx as conn_dwx
+from mt_connector import connect_mt as conn_mt
 from table_MVC import TableModel
-import pandas as pd
-import asyncio
+# import pandas as pd
 
-print('{}: Start of Loading UI Manipulation Code'.format(time.time()))
+print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
 
 
 class CallUi(QtWidgets.QMainWindow):
@@ -28,8 +35,8 @@ class CallUi(QtWidgets.QMainWindow):
 
         # Load DWX Connection Object
         # self.conn_api_mvc = DwxModel()
-        self.conn_api, self.conn_api_mvc = asyncio.run(conn_dwx())
-        
+        self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
+
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
@@ -63,14 +70,53 @@ class CallUi(QtWidgets.QMainWindow):
         )
 
         #List of Timeframe buttons. For iterations
-        self.order_timeframe_btns = (
-            self.ui.MIN_1_BTN,self.ui.MIN_5_BTN, self.ui.MIN_30_BTN,  self.ui.MIN_60_BTN, self.ui.MIN_1440_BTN,
+        self.timeframe_btns = (
+            self.ui.MIN_1_BTN,self.ui.MIN_5_BTN,
+            self.ui.MIN_15_BTN, self.ui.MIN_30_BTN,
+            self.ui.MIN_60_BTN, self.ui.MIN_240_BTN,
+            self.ui.MIN_1440_BTN,
         )
 
         #ist of instrument comboboxes. For iterations
-        self.instr_comboboxes = (
-            self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
-            )
+        # self.instr_comboboxes = (
+        #     self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
+        #     )
+
+
+        #Populate Symbol groups combobox with static list of symbol groups
+        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
+
+
+        #Generate available symbols from  current MT5 account
+        self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
+
+
+        #Graphs
+        # series = QLineSeries()
+
+        # series.append(0,6)
+        # series.append(2,4)
+        # series.append(3,8)
+        # series.append(6,10)
+
+        # series << QPointF(11,1) << QPointF(13,6) << QPointF(15,6) << QPointF(17,8)
+
+        # chart = QChart()
+        # chart.addSeries(series)
+        # chart.setAnimationOptions(QChart.SeriesAnimations)
+        # chart.setTitle('Line Chart Example')
+
+        # chart.legend().setVisible(True)
+
+        # chart.legend().setAlignment(Qt.AlignBottom)
+
+        # chartview = QChartView(chart)
+
+        # chartview.setRenderHint(QPainter.Antialiasing)
+
+        # self.setCentralWidget(chartview)
+
+
 
 
         # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
@@ -99,7 +145,9 @@ class CallUi(QtWidgets.QMainWindow):
         """
         trades = self.conn_api_mvc.get_current_trades()
         self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
-        self.ui.CURRENT_TRADES_TABLE.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.ui.CURRENT_TRADES_TABLE \
+                .horizontalHeader() \
+                .setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
 
     def disable_execute_trade_btn(self):
@@ -108,25 +156,38 @@ class CallUi(QtWidgets.QMainWindow):
         self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(False)
 
     #Change the current text in the alternate combobox to None
-    def combobox_text_changed(self, instr_combobox):
+    def symbol_groups_combobox_text_changed(self, symbol_group_combobox):
         """_summary_
 
         Args:
             instr_combobox (combobox Object): Combobox object that created the signal
         """
-        #Disable the Execute button.      
+        #Disable the Execute button.
         self.disable_execute_trade_btn()
 
-        #If current text is None, return
-        if instr_combobox.currentText() == '':
+        #Check if the symbols combobox has any current symbols, & clear if True 
+        if self.ui.SYMBOLS_COMBOBOX:
+            self.ui.SYMBOLS_COMBOBOX.clear()
+
+        #Dict matching group symbols to GetSymbols objects
+        symbol_groups_dict = {
+            'FOREX': self.symbols.forex,
+            'METALS': self.symbols.metals,
+            'INDICES': self.symbols.indices,
+            'COMMODITIES': self.symbols.commodities,
+            'ENERGIES': self.symbols.energies,
+            'CRYPTO': self.symbols.crypto,
+            'FUTURES': self.symbols.futures,
+        }
+
+        #While the currentText is not similar to known SYMBOL_GROUPS, return
+        if symbol_group_combobox.currentText() not in symbol_groups_dict:
             return
 
-        #Else iterate through the list of comboboxes
-        for i in self.instr_comboboxes:
-            #If i is not the currently altered combobox, alter the text to blank
-            if i != instr_combobox:
-                i.setCurrentText('')
-        # print('Current Instrument to trade: {}.'.format(instr_combobox.currentText()))
+        #Update the symbols combobox with list of the symbols in selected group
+        self.ui.SYMBOLS_COMBOBOX.addItems(symbol_groups_dict[symbol_group_combobox.currentText()])
+
+        print(f'Current Symbol Group to trade: {symbol_group_combobox.currentText()}.')
 
     def order_type_btn_clicked(self, order_btn):
         """Styling & disabling for order buttons depending on which one is selected.
@@ -179,6 +240,21 @@ class CallUi(QtWidgets.QMainWindow):
                             'border-width: 2px;'
                             'border-color: beige;'
                             )
+
+            if order_strategy in \
+            [self.ui.MINIMAL_TRADE_BTN, self.ui.SINGLE_TRADE_BTN]:
+                pass
+            else:
+                self.ui.TP_LEVEL_1_LABEL.setEnabled(True)
+                self.ui.TP_LEVEL_1_spinBox.setEnabled(True)
+                self.ui.TP_LEVEL_2_LABEL.setEnabled(True)
+                self.ui.TP_LEVEL_2_spinBox.setEnabled(True)
+
+                if order_strategy == self.ui.THREE_WAY_SPLIT_TRADE_BTN:
+                    self.ui.TP_LEVEL_3_LABEL.setEnabled(True)
+                    self.ui.TP_LEVEL_3_spinBox.setEnabled(True)
+
+
         else: order_strategy.setStyleSheet('')
 
     def order_timeframe_btn_clicked(self, order_timeframe):
@@ -188,11 +264,11 @@ class CallUi(QtWidgets.QMainWindow):
             order_timeframe ([type]): [description]
         """
 
-        #Disable the Execute button.      
+        #Disable the Execute button.
         self.disable_execute_trade_btn()
 
 
-        for i in self.order_timeframe_btns:
+        for i in self.timeframe_btns:
             if i != order_timeframe:
                 if i.isChecked():
                     i.setChecked(False)
@@ -236,10 +312,10 @@ class CallUi(QtWidgets.QMainWindow):
 
         self.ui.TWO_WAY_SPLIT_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.TWO_WAY_SPLIT_TRADE_BTN))
-        
+
         self.ui.THREE_WAY_SPLIT_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.THREE_WAY_SPLIT_TRADE_BTN))
-        
+
         self.ui.SINGLE_TRADE_BTN.clicked.connect(
             lambda: self.order_strategy_btn_clicked(self.ui.SINGLE_TRADE_BTN))
 
@@ -247,25 +323,34 @@ class CallUi(QtWidgets.QMainWindow):
             lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN)
         )
 
+        self.ui.MIN_1_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
+        )
+
         self.ui.MIN_5_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
         )
 
-        self.ui.MIN_1_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
+        self.ui.MIN_15_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_15_BTN)
         )
 
         self.ui.MIN_30_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_30_BTN)
         )
 
+        self.ui.MIN_60_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
+        )
+
+        self.ui.MIN_240_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_240_BTN)
+        )
+
         self.ui.MIN_1440_BTN.clicked.connect(
             lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1440_BTN)
         )
 
-        self.ui.MIN_60_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
-        )
 
         self.ui.CURRENT_TRADES_TABLE.doubleClicked.connect(self.clicked_table)
 
@@ -289,75 +374,87 @@ class CallUi(QtWidgets.QMainWindow):
     def setup_combobox_connect(self):
         """_summary_
         """
-
-        self.ui.COMMS_INDCS_COMBOBOX.currentTextChanged.connect(
-            lambda: self.combobox_text_changed(self.ui.COMMS_INDCS_COMBOBOX)
-        )
-        self.ui.CURRENCY_PAIRS_METALS_COMBOBOX.currentTextChanged.connect(
-            lambda: self.combobox_text_changed(self.ui.CURRENCY_PAIRS_METALS_COMBOBOX)
+        self.ui.SYMBOL_GROUPS_COMBOBOX.currentTextChanged.connect(
+            lambda: self.symbol_groups_combobox_text_changed(self.ui.SYMBOL_GROUPS_COMBOBOX)
         )
 
-    def trade_selection_changed(self):
-        print(True)
+    # def setup_combobox_connect(self):
+    #     self.ui.TP_LEVEL_spinBox.connect()
 
     def prepare_new_trade(self):
         """[summary]
         """
+        symbols_combobox = self.ui.SYMBOLS_COMBOBOX
+        new_trade_dict = {}
+        new_trade_dict['symbol_group']=  self.ui.SYMBOL_GROUPS_COMBOBOX.currentText()
 
-        #Check if the text entered is a valid currency pair that
-        # can be operated on ie. existing pairs on the list.
-        for i in self.instr_comboboxes:
-            if i.currentText() != '':
-                _symbol = i.currentText()
-                
-                #Ensure that the text is in the current list of traded instruments.
-                if _symbol not in [i.itemText(j) for j in range(i.count())]:
-                    print('Select a Valid Instrument.')
+        # Risk in ratio form
+        new_trade_dict['risk'] = self.ui.RISK_doubleSpinBox.value() / 100
 
-                    return
 
-        _order = ''
-        #Iterate through the order types to find the selected one
-        for i in self.order_btns:
-            if i.isChecked():
-                _order = i.text()
-        
-        if _order == '':
-            print('Select an order type.')
-            return
 
         #Iterate through the order timeframes to find the selected one
         #Do nothing if none is selected
-        _timeframe = ''
-        for i in self.order_timeframe_btns:
+        timeframe = ''
+        for i in self.timeframe_btns:
             if i.isChecked():
-                _timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
-        
-        if _timeframe == '':
+                timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
+
+                new_trade_dict['timeframe'] = timeframe
+
+        if timeframe == '':
             print('Select an order Timeframe.')
             return
 
 
-        if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() != '':
-            try:
-                buy_sell_limit = float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText())
-            except Exception:
-                print('Buy/Sell Limit is not a valid Double value')
+        #Check if the text entered is a valid currency pair that
+        # can be operated on ie. existing pairs on the list.
+        if symbols_combobox.currentText() not in \
+            [symbols_combobox.itemText(i) for i in range(symbols_combobox.count())]:
+            print('Selected Symbol is Invalid')
+            return
+
+        else:
+            symbol = symbols_combobox.currentText()
+
+            new_trade_dict['symbol'] = symbol
+
+        order_type = ''
+        #Iterate through the order types to find the selected one
+        for i in self.order_btns:
+            if i.isChecked():
+                order_type = i.text()
+
+                new_trade_dict['order'] = order_type
+
+
+        if order_type == '':
+            print('Select an Order Type.')
+            return
+
+        #For orders that are not instant,
+        # the price limit/stop needs to be specified as a valid float.
+        elif order_type not in ['SELL','BUY']:
+
+            if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() != '':
+                try:
+                    buy_sell_limit = float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText())
+
+                    new_trade_dict['buy_sell_limit'] = buy_sell_limit
+
+                except Exception:
+                    print('Buy/Sell Limit is not a valid Double value')
+                    return
+            else:
+                print('Order Type requires a specified Price Limit/Stop')
                 return
-        else: buy_sell_limit = ''
 
 
-        new_trade_dict = {
-            '_symbol': _symbol,
-            '_order': _order,
-            '_timeframe': _timeframe,
-            'buy_sell_limit': buy_sell_limit
-        }
         try:
             self.prep_new_trade = self.conn_api_mvc.prepare_new_trade(new_trade_dict)
 
-            self.ui.PIP_VALUE_TEXT.setText(str(round(self.prep_new_trade.pip_value, 4)))
-            self.ui.ATR_IN_PIPS_TEXT.setText(str(round(self.prep_new_trade.atr_in_pips, 2)))
+            self.ui.PIP_VALUE_TEXT.setText(str(round(self.prep_new_trade.symbol_value, 4)))
+            self.ui.ATR_IN_PIPS_TEXT.setText(str(round(self.prep_new_trade.atr_in_points, 2)))
             self.ui.LOT_SIZE_TEXT.setText(str(str(round(self.prep_new_trade.lot_size, 2))))
             self.ui.RISK_AMOUNT_TEXT.setText(str(round(self.prep_new_trade.risk_amount, 4)))
             self.ui.ACCOUNT_BALANCE_TEXT.setText(str(self.prep_new_trade.account_info['balance']))
@@ -372,22 +469,14 @@ class CallUi(QtWidgets.QMainWindow):
             # model = QtGui.QStandardItemModel()
             # model.setHorizontalHeaderLabels(hist_df.columns)
 
-            
-
-
-            # self.ui.HIST_DF_TABLE.setHorizontalHeader([1,2,3,4])
-            # self.ui.HIST_DF_TABLE.setHorizontalHeader([i for i in hist_df.columns if i not in ['Index']])
-            # self.ui.HIST_DF_TABLE.setHorizontalHeader(model)
 
             # self.ui.HIST_DF_TABLE.setVisible(True)
             self.ui.HIST_DF_TABLE.setModel(TableModel(hist_df))
 
 
 
-        except Exception as ex:
-            _exstr = "Exception Type {0}. Args:\n{1!r}"
-            _msg = _exstr.format(type(ex).__name__, ex.args)
-            print(_msg)
+        except Exception:
+            traceback.print_exc()
 
 
 
@@ -408,32 +497,50 @@ class CallUi(QtWidgets.QMainWindow):
             print('Select a trading strategy.')
             return
 
+        for i in self.timeframe_btns:
+            if i.isChecked():
+                timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
+
+        if timeframe == '':
+            print('Select an order Timeframe.')
+            return
+
+
         try:
             self.conn_api_mvc.new_trade(
                 {
-                '_action': 'OPEN',
-                '_type': self.prep_new_trade.trade_dict['_order'],      #1 for SELL, O for BUY
-                '_symbol': self.prep_new_trade._symbol,
-                '_price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
-                     float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),                  #Refers to current price value
+                'action': 'OPEN',
+                'type': self.prep_new_trade.trade_dict['order'],      #1 for SELL, O for BUY
+                'symbol': self.prep_new_trade.symbol,
+                #Refers to current price value
+                'price': 0.0 if self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText() == '' else\
+                     float(self.ui.PRICE_LIMIT_STOP_VALUE.toPlainText()),
                 # SL/TP in POINTS, not pips.
-                '_SL': self.prep_new_trade.atr_in_pips * self.prep_new_trade.sl_multiplier * 10,
-                '_TP': self.prep_new_trade.atr_in_pips * self.prep_new_trade.tp_multiplier * 10,
-                '_comment': self.ui.NEW_TRADE_COMMENT_VALUE.toPlainText(),
-                '_lots': round(self.prep_new_trade.lot_size, 2),
-                '_magic': 123456,
-                '_ticket': 0
+                'SL_points':
+                    self.prep_new_trade.atr * self.prep_new_trade.sl_multiplier,
+
+                'TP_points':
+                    self.prep_new_trade.atr * self.prep_new_trade.tp_multiplier,
+
+                'comment':
+                    f'{str(timeframe)}_{self.ui.NEW_TRADE_COMMENT_VALUE.toPlainText()}',
+                    
+                'volume': round(self.prep_new_trade.lot_size, 2),
+                'magic': 123456,
+                'ticket': 0
                 },
                 {
                     'trade_strategy': trade_strategy,
+                    'timeframe': timeframe,
                     'split_ratio': 0.9,
-                    'split_ratio_2' : 0.5
-                }
+                    'split_ratio_2' : 0.5,
+                    'tp_multiplier_1' : self.ui.TP_LEVEL_1_spinBox.value(),
+                    'tp_multiplier_2' : self.ui.TP_LEVEL_2_spinBox.value(),
+                    'tp_multiplier_3' : self.ui.TP_LEVEL_3_spinBox.value()
+                },
             )
-        except Exception as ex:
-            _exstr = "Exception Type {0}. Args:\n{1!r}"
-            _msg = _exstr.format(type(ex).__name__, ex.args)
-            print(_msg)
+        except Exception:
+            traceback.print_exc()
 
 
 def setup_window():
@@ -442,7 +549,7 @@ def setup_window():
     """
     app = QtWidgets.QApplication(sys.argv)
     now_window = CallUi()
-    # print(time.time())
-    print(time.time())
+    # print(time.asctime(time.localtime()))
+    print(f"{time.asctime(time.localtime())}: Finished loading App GUI")
     now_window.show()
     sys.exit(app.exec_())
