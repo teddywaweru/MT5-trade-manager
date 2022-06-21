@@ -470,7 +470,7 @@ class CallUi(QtWidgets.QMainWindow):
             # model.setHorizontalHeaderLabels(hist_df.columns)
 
 
-            # self.ui.HIST_DF_TABLE.setVisible(True)
+            self.ui.HIST_DF_TABLE.setVisible(True)
             self.ui.HIST_DF_TABLE.setModel(TableModel(hist_df))
 
 
