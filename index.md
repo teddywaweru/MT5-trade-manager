@@ -1,6 +1,7 @@
 ## Meta Trader 5 Trade Manager
 
 The GUI application is intended to be used for facilitating trades in the MT5 platform. The application utilizes the Python API of the platform to carry out client requests. There will be need to expand functionality to include MQL4 & MQL5 scripts, as the API is still not mature enough.
+![Image](images/MT5_TradeManager_GUI.png)
 
 You can use the [editor on GitHub](https://github.com/teddywaweru/FX_MT4_app/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
