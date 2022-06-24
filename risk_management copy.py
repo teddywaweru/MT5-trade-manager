@@ -1,4 +1,5 @@
-"""[summary]
+"""Original Layout of carrying out RiskManagement which utilized 
+     the MT4 platform. Code is not used in current version
 
 Returns:
     [type]: [description]
