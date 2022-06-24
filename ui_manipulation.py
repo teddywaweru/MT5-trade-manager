@@ -19,6 +19,7 @@ from UI_templates import main_window
 # from dwx_MVC import DwxModel
 from mt_connector import connect_mt as conn_mt
 from table_MVC import TableModel
+import calendar_data
 # import pandas as pd
 
 print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
@@ -90,7 +91,7 @@ class CallUi(QtWidgets.QMainWindow):
         #Generate available symbols from  current MT5 account
         self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
 
-
+        self.news_data = load_calendar_data_text(mt5=self.conn_api)
         #Graphs
         # series = QLineSeries()
 
