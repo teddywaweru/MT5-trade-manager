@@ -91,7 +91,7 @@ class CallUi(QtWidgets.QMainWindow):
         #Generate available symbols from  current MT5 account
         self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
 
-        self.news_data = load_calendar_data_text(mt5=self.conn_api)
+        # self.news_data = load_calendar_data_text(mt5=self.conn_api)
         #Graphs
         # series = QLineSeries()
 
