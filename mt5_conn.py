@@ -239,7 +239,7 @@ class Mt5Mvc():
         #Essentially, the functionality should be availalble 
         # on the GUI
         if modif_trade['timeframe'] < 1440:         #Daily Timeframe
-            modif_trade['split_ratio'] = 0.5
+            modif_trade['split_ratio'] = 0.9
             # new_trade['tp'] = new_trade['scale_tp_by_3']
 
         else: modif_trade['split_ratio'] = 0.5
