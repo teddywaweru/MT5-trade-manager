@@ -45,9 +45,17 @@ class CallUi(QtWidgets.QMainWindow):
         #Load Main UI objects
         self.ui.setupUi(self)
 
+        #Generate available symbols from  current MT5 account
+        self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
+
+        #Populate Symbol groups combobox with static list of symbol groups
+        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
+        #Set current index to -1 so that combobox remains empty
+        #CurrentIndex is changed to 0 after adding items
+        self.ui.SYMBOL_GROUPS_COMBOBOX.setCurrentIndex(-1)
+
         # Load widget functions (BTN, COMBOBOX) for reacting to actions
         self.setup_btn_connect()
-
         self.setup_combobox_connect()
 
         self.load_trades()
@@ -83,12 +91,7 @@ class CallUi(QtWidgets.QMainWindow):
         #     )
 
 
-        #Populate Symbol groups combobox with static list of symbol groups
-        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
 
-
-        #Generate available symbols from  current MT5 account
-        self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
 
 
         #Graphs
@@ -186,6 +189,9 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Update the symbols combobox with list of the symbols in selected group
         self.ui.SYMBOLS_COMBOBOX.addItems(symbol_groups_dict[symbol_group_combobox.currentText()])
+        #Adding items shifts currentIndex to 0
+        #Set currentIndex to -1 to keep combobox empty.
+        self.ui.SYMBOLS_COMBOBOX.setCurrentIndex(-1)
 
         print(f'Current Symbol Group to trade: {symbol_group_combobox.currentText()}.')
 
@@ -246,13 +252,13 @@ class CallUi(QtWidgets.QMainWindow):
                 pass
             else:
                 self.ui.TP_LEVEL_1_LABEL.setEnabled(True)
-                self.ui.TP_LEVEL_1_spinBox.setEnabled(True)
+                self.ui.TP_LEVEL_1_SPINBOX.setEnabled(True)
                 self.ui.TP_LEVEL_2_LABEL.setEnabled(True)
-                self.ui.TP_LEVEL_2_spinBox.setEnabled(True)
+                self.ui.TP_LEVEL_2_SPINBOX.setEnabled(True)
 
                 if order_strategy == self.ui.THREE_WAY_SPLIT_TRADE_BTN:
                     self.ui.TP_LEVEL_3_LABEL.setEnabled(True)
-                    self.ui.TP_LEVEL_3_spinBox.setEnabled(True)
+                    self.ui.TP_LEVEL_3_SPINBOX.setEnabled(True)
 
 
         else: order_strategy.setStyleSheet('')
@@ -389,7 +395,7 @@ class CallUi(QtWidgets.QMainWindow):
         new_trade_dict['symbol_group']=  self.ui.SYMBOL_GROUPS_COMBOBOX.currentText()
 
         # Risk in ratio form
-        new_trade_dict['risk'] = self.ui.RISK_doubleSpinBox.value() / 100
+        new_trade_dict['risk'] = self.ui.RISK_DOUBLESPINBOX.value() / 100
 
 
 
@@ -534,9 +540,9 @@ class CallUi(QtWidgets.QMainWindow):
                     'timeframe': timeframe,
                     'split_ratio': 0.9,
                     'split_ratio_2' : 0.5,
-                    'tp_multiplier_1' : self.ui.TP_LEVEL_1_spinBox.value(),
-                    'tp_multiplier_2' : self.ui.TP_LEVEL_2_spinBox.value(),
-                    'tp_multiplier_3' : self.ui.TP_LEVEL_3_spinBox.value()
+                    'tp_multiplier_1' : self.ui.TP_LEVEL_1_SPINBOX.value(),
+                    'tp_multiplier_2' : self.ui.TP_LEVEL_2_SPINBOX.value(),
+                    'tp_multiplier_3' : self.ui.TP_LEVEL_3_SPINBOX.value()
                 },
             )
         except Exception:
