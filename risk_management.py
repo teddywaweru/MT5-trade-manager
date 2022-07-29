@@ -71,9 +71,10 @@ class RiskManagement():
 
        
        #Statically declare SL_Multiplier.
-    #    1.5 for daily timeframe orders, $ for lower timeframes
+    #    1.5 for daily timeframe orders, 3 for lower timeframes
+        #TODO
        #ADD user input.
-        self.sl_multiplier = 3  if self.trade_dict['timeframe'] < 1440 \
+        self.sl_multiplier = 1.5  if self.trade_dict['timeframe'] < 1440 \
                                     else 1.5
 
         self.tp_multiplier = 1
