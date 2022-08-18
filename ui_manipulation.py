@@ -8,8 +8,12 @@ import sys
 import time
 import asyncio
 import traceback
+# from PyQt5 import QtWidgets
+# from PyQt5.QtChart import QChart, QChartView, QLineSeries
+# from PyQt5.QtCore import Qt, QPointF
+# from PyQt5.QtGui import QPainter
 from PyQt5 import QtWidgets
-from PyQt5.QtChart import QChart, QChartView, QLineSeries
+# from PyQt5Chart import QChart, QChartView, QLineSeries
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QPainter
 # from pathlib import Path
@@ -35,7 +39,11 @@ class CallUi(QtWidgets.QMainWindow):
 
         # Load DWX Connection Object
         # self.conn_api_mvc = DwxModel()
-        self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
+        try:
+            self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
+        except:
+            traceback.print_exc()
+            return
 
 
         # Create Main UI Instance
