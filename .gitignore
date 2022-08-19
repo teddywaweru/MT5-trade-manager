@@ -129,7 +129,10 @@ dmypy.json
 .pyre/
 
 #Raw PyQt5 Layout Files
-*.ui
+# *.ui
 
 #VS Code Folder
 .vscode
+
+#Raw PyQt5 icon Files
+icons

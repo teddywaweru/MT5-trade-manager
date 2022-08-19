@@ -239,7 +239,7 @@ class Mt5Mvc():
         #Essentially, the functionality should be availalble 
         # on the GUI
         if modif_trade['timeframe'] < 1440:         #Daily Timeframe
-            modif_trade['split_ratio'] = 0.9
+            modif_trade['split_ratio'] = 0.5
             # new_trade['tp'] = new_trade['scale_tp_by_3']
 
         else: modif_trade['split_ratio'] = 0.5
@@ -342,11 +342,11 @@ class Mt5Mvc():
                 if new_trade_2['volume'] > symbol_info['volume_max']:
                     split_trade_2 = split_trades_by_vol(new_trade_2)
 
-                    return (split_trade_1 + split_trade_2)
+                    return split_trade_1 + split_trade_2
                 
-                return (split_trade_1 + [new_trade_2])
+                return split_trade_1 + [new_trade_2]
 
-            return (new_trade_1,new_trade_2)
+            return new_trade_1,new_trade_2
 
 
         def three_way_split_trade():
@@ -390,20 +390,20 @@ class Mt5Mvc():
                     if new_trade_3['volume'] > symbol_info['volume_max']:
                         split_trade_3 = split_trades_by_vol(new_trade_3)
 
-                        return (split_trade_1 + split_trade_2 + split_trade_3)
+                        return split_trade_1 + split_trade_2 + split_trade_3
 
-                    return (split_trade_1 + split_trade_2 +[new_trade_3])
-                
-                return (split_trade_1 + [new_trade_2, new_trade_3])
+                    return split_trade_1 + split_trade_2 +[new_trade_3]
+
+                return split_trade_1 + [new_trade_2, new_trade_3]
 
 
-            return  (new_trade_1, new_trade_2, new_trade_3)
+            return  new_trade_1, new_trade_2, new_trade_3
 
 
         trade_strategy_funcs = {
             'SINGLE TRADE': single_trade,
-            '2-WAY SPLIT TRADE': two_way_split_trade,
-            '3-WAY SPLIT TRADE': three_way_split_trade,
+            'SPLIT 2-WAY': two_way_split_trade,
+            'SPLIT 3-WAY': three_way_split_trade,
             'MINIMAL TRADE': minimal_trade
         }
 
@@ -488,5 +488,4 @@ MT5_ORDER_TYPE_FILLING = {
     1: 'ORDER_FILLING_FOK',
     2: 'ORDER_FILLING_IOC',
     3: 'ORDER_FILLING_RETURN',
-
 }

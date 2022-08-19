@@ -13,7 +13,7 @@ import traceback
 # from PyQt5.QtCore import Qt, QPointF
 # from PyQt5.QtGui import QPainter
 from PyQt5 import QtWidgets
-# from PyQt5Chart import QChart, QChartView, QLineSeries
+# from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QPainter
 # from pathlib import Path
@@ -23,6 +23,7 @@ from UI_templates import main_window
 # from dwx_MVC import DwxModel
 from mt_connector import connect_mt as conn_mt
 from table_MVC import TableModel
+# from test_ui import test_section
 # import pandas as pd
 
 print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
@@ -48,14 +49,23 @@ class CallUi(QtWidgets.QMainWindow):
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
-
+        self.setWindowFlag(Qt.FramelessWindowHint)
 
         #Load Main UI objects
         self.ui.setupUi(self)
 
+        #Generate available symbols from  current MT5 account
+        self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
+
+
+        #Populate Symbol groups combobox with static list of symbol groups
+        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
+        #Set current index to -1 so that combobox remains empty
+        #CurrentIndex is changed to 0 after adding items
+        self.ui.SYMBOL_GROUPS_COMBOBOX.setCurrentIndex(-1)
+
         # Load widget functions (BTN, COMBOBOX) for reacting to actions
         self.setup_btn_connect()
-
         self.setup_combobox_connect()
 
         self.load_trades()
@@ -85,22 +95,18 @@ class CallUi(QtWidgets.QMainWindow):
             self.ui.MIN_1440_BTN,
         )
 
-        #ist of instrument comboboxes. For iterations
-        # self.instr_comboboxes = (
-        #     self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
-        #     )
+        # test_section(self)
+
+        # load_test_components()
 
 
-        #Populate Symbol groups combobox with static list of symbol groups
-        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
+
+        self.ui.calendarWidget.clicked.connect(
+            lambda: self.calendar_clicked(self.ui.calendarWidget))
 
 
-        #Generate available symbols from  current MT5 account
-        self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
-
-
-        #Graphs
-        # series = QLineSeries()
+    def test_trade(self):
+        pass
 
         # series.append(0,6)
         # series.append(2,4)
@@ -122,28 +128,20 @@ class CallUi(QtWidgets.QMainWindow):
 
         # chartview.setRenderHint(QPainter.Antialiasing)
 
-        # self.setCentralWidget(chartview)
 
 
 
 
-        # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
-            # print(True)
 
+    def calendar_clicked(self,calendar):
+        print('yes!!')
+        print(calendar.selectedDate())
 
         #ADD textlabel function to be loaded, similar to setupBtnconnect
         # also for text edits,
         #writing functions instead of loading in the __init__ will make the code more organized.
 
-        # data = [
-        #     [4, 9, 2],
-        #     [1, 0, 0],
-        #     [3, 5, 0],
-        #     [3, 3, 2],
-        #     [7, 8, 9],
-        # ]
 
-        # data = pd.DataFrame(data)
 
         # self.table_model = TableModel(data)
         # self.ui.tableView.setModel(self.table_model)
@@ -194,6 +192,9 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Update the symbols combobox with list of the symbols in selected group
         self.ui.SYMBOLS_COMBOBOX.addItems(symbol_groups_dict[symbol_group_combobox.currentText()])
+        #Adding items shifts currentIndex to 0
+        #Set currentIndex to -1 to keep combobox empty.
+        self.ui.SYMBOLS_COMBOBOX.setCurrentIndex(-1)
 
         print(f'Current Symbol Group to trade: {symbol_group_combobox.currentText()}.')
 
@@ -254,13 +255,13 @@ class CallUi(QtWidgets.QMainWindow):
                 pass
             else:
                 self.ui.TP_LEVEL_1_LABEL.setEnabled(True)
-                self.ui.TP_LEVEL_1_spinBox.setEnabled(True)
+                self.ui.TP_LEVEL_1_SPINBOX.setEnabled(True)
                 self.ui.TP_LEVEL_2_LABEL.setEnabled(True)
-                self.ui.TP_LEVEL_2_spinBox.setEnabled(True)
+                self.ui.TP_LEVEL_2_SPINBOX.setEnabled(True)
 
                 if order_strategy == self.ui.THREE_WAY_SPLIT_TRADE_BTN:
                     self.ui.TP_LEVEL_3_LABEL.setEnabled(True)
-                    self.ui.TP_LEVEL_3_spinBox.setEnabled(True)
+                    self.ui.TP_LEVEL_3_SPINBOX.setEnabled(True)
 
 
         else: order_strategy.setStyleSheet('')
@@ -397,7 +398,7 @@ class CallUi(QtWidgets.QMainWindow):
         new_trade_dict['symbol_group']=  self.ui.SYMBOL_GROUPS_COMBOBOX.currentText()
 
         # Risk in ratio form
-        new_trade_dict['risk'] = self.ui.RISK_doubleSpinBox.value() / 100
+        new_trade_dict['risk'] = self.ui.RISK_DOUBLESPINBOX.value() / 100
 
 
 
@@ -542,9 +543,9 @@ class CallUi(QtWidgets.QMainWindow):
                     'timeframe': timeframe,
                     'split_ratio': 0.9,
                     'split_ratio_2' : 0.5,
-                    'tp_multiplier_1' : self.ui.TP_LEVEL_1_spinBox.value(),
-                    'tp_multiplier_2' : self.ui.TP_LEVEL_2_spinBox.value(),
-                    'tp_multiplier_3' : self.ui.TP_LEVEL_3_spinBox.value()
+                    'tp_multiplier_1' : self.ui.TP_LEVEL_1_SPINBOX.value(),
+                    'tp_multiplier_2' : self.ui.TP_LEVEL_2_SPINBOX.value(),
+                    'tp_multiplier_3' : self.ui.TP_LEVEL_3_SPINBOX.value()
                 },
             )
         except Exception:
@@ -561,3 +562,58 @@ def setup_window():
     print(f"{time.asctime(time.localtime())}: Finished loading App GUI")
     now_window.show()
     sys.exit(app.exec_())
+
+
+        #ist of instrument comboboxes. For iterations
+        # self.instr_comboboxes = (
+        #     self.ui.CURRENCY_PAIRS_METALS_COMBOBOX, self.ui.COMMS_INDCS_COMBOBOX
+        #     )
+
+        #Graphs
+        # series = QLineSeries()
+
+        # series.append(0,6)
+        # series.append(2,4)
+        # series.append(3,8)
+        # series.append(6,10)
+
+        # series << QPointF(11,1) << QPointF(13,6) << QPointF(15,6) << QPointF(17,8)
+
+        # chart = QChart()
+        # chart.addSeries(series)
+        # chart.setAnimationOptions(QChart.SeriesAnimations)
+        # chart.setTitle('Line Chart Example')
+
+        # chart.legend().setVisible(True)
+
+        # chart.legend().setAlignment(Qt.AlignBottom)
+
+        # chartview = QChartView(chart)
+
+        # chartview.setRenderHint(QPainter.Antialiasing)
+
+        # self.setCentralWidget(chartview)
+
+
+
+
+        # if self.ui.CURRENT_TRADES_TABLE.selectionChanged():
+            # print(True)
+
+
+        #ADD textlabel function to be loaded, similar to setupBtnconnect
+        # also for text edits,
+        #writing functions instead of loading in the __init__ will make the code more organized.
+
+        # data = [
+        #     [4, 9, 2],
+        #     [1, 0, 0],
+        #     [3, 5, 0],
+        #     [3, 3, 2],
+        #     [7, 8, 9],
+        # ]
+
+        # data = pd.DataFrame(data)
+
+        # self.table_model = TableModel(data)
+        # self.ui.tableView.setModel(self.table_model)
