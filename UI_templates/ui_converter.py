@@ -17,4 +17,3 @@ def ui_converter():
 
     else:
         return
-

@@ -8,6 +8,10 @@ import sys
 import time
 import asyncio
 import traceback
+# from PyQt5 import QtWidgets
+# from PyQt5.QtChart import QChart, QChartView, QLineSeries
+# from PyQt5.QtCore import Qt, QPointF
+# from PyQt5.QtGui import QPainter
 from PyQt5 import QtWidgets
 # from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtCore import Qt, QPointF
@@ -36,7 +40,11 @@ class CallUi(QtWidgets.QMainWindow):
 
         # Load DWX Connection Object
         # self.conn_api_mvc = DwxModel()
-        self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
+        try:
+            self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
+        except:
+            traceback.print_exc()
+            return
 
 
         # Create Main UI Instance
@@ -100,53 +108,25 @@ class CallUi(QtWidgets.QMainWindow):
     def test_trade(self):
         pass
 
-    def symbol_groups_combobox_text_changed_testing(self, symbol_group_combobox):
-        """_summary_
+        # series.append(0,6)
+        # series.append(2,4)
+        # series.append(3,8)
+        # series.append(6,10)
 
-        Args:
-            instr_combobox (combobox Object): Combobox object that created the signal
-        """
-        #Disable the Execute button.
-        self.disable_execute_trade_btn()
+        # series << QPointF(11,1) << QPointF(13,6) << QPointF(15,6) << QPointF(17,8)
 
-        #Check if the symbols combobox has any current symbols, & clear if True 
-        if self.ui.SYMBOLS_COMBOBOX_TESTING:
-            self.ui.SYMBOLS_COMBOBOX_TESTING.clear()
+        # chart = QChart()
+        # chart.addSeries(series)
+        # chart.setAnimationOptions(QChart.SeriesAnimations)
+        # chart.setTitle('Line Chart Example')
 
-        #Dict matching group symbols to GetSymbols objects
-        symbol_groups_dict = {
-            'FOREX': self.symbols.forex,
-            'METALS': self.symbols.metals,
-            'INDICES': self.symbols.indices,
-            'COMMODITIES': self.symbols.commodities,
-            'ENERGIES': self.symbols.energies,
-            'CRYPTO': self.symbols.crypto,
-            'FUTURES': self.symbols.futures,
-        }
+        # chart.legend().setVisible(True)
 
-        #While the currentText is not similar to known SYMBOL_GROUPS, return
-        if symbol_group_combobox.currentText() not in symbol_groups_dict:
-            return
+        # chart.legend().setAlignment(Qt.AlignBottom)
 
-        #Update the symbols combobox with list of the symbols in selected group
-        self.ui.SYMBOLS_COMBOBOX_TESTING.addItems(symbol_groups_dict[symbol_group_combobox.currentText()])
-        #Adding items shifts currentIndex to 0
-        #Set currentIndex to -1 to keep combobox empty.
-        self.ui.SYMBOLS_COMBOBOX_TESTING.setCurrentIndex(-1)
+        # chartview = QChartView(chart)
 
-        print(f'Current Symbol Group to trade: {symbol_group_combobox.currentText()}.')
-
-    def load_test_components(self):
-        self.ui.EXECUTE_NEW_TRADE_BTN_TESTING.clicked.connect(
-            self.test_trade
-        )
-        self.ui.SYMBOL_GROUPS_COMBOBOX_TESTING.addItems(self.conn_api_mvc.symbol_groups())
-        self.ui.SYMBOL_GROUPS_COMBOBOX_TESTING.setCurrentIndex(-1)
-
-        self.ui.SYMBOL_GROUPS_COMBOBOX_TESTING.currentTextChanged.connect(
-            lambda: self.symbol_groups_combobox_text_changed_testing(self.ui.SYMBOL_GROUPS_COMBOBOX_TESTING)
-        )
-
+        # chartview.setRenderHint(QPainter.Antialiasing)
 
 
 
@@ -157,9 +137,14 @@ class CallUi(QtWidgets.QMainWindow):
         print('yes!!')
         print(calendar.selectedDate())
 
+        #ADD textlabel function to be loaded, similar to setupBtnconnect
+        # also for text edits,
+        #writing functions instead of loading in the __init__ will make the code more organized.
 
 
 
+        # self.table_model = TableModel(data)
+        # self.ui.tableView.setModel(self.table_model)
     def load_trades(self):
         """
         _summary_
