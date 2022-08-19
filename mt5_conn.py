@@ -402,8 +402,8 @@ class Mt5Mvc():
 
         trade_strategy_funcs = {
             'SINGLE TRADE': single_trade,
-            '2-WAY SPLIT TRADE': two_way_split_trade,
-            '3-WAY SPLIT TRADE': three_way_split_trade,
+            'SPLIT 2-WAY': two_way_split_trade,
+            'SPLIT 3-WAY': three_way_split_trade,
             'MINIMAL TRADE': minimal_trade
         }
 

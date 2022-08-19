@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(640, 606)
+        MainWindow.resize(638, 606)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -60,9 +60,15 @@ class Ui_MainWindow(object):
 "}\n"
 "QPushButton {\n"
 "    color: rgb(230, 232, 230);\n"
+"    color: rgb(255, 255, 0);\n"
 "    background-color: rgb(90, 117, 166);\n"
-"border-width: 2px;\n"
-"    border-radius: 1px;\n"
+"border-width: 1px;\n"
+"    border-bottom-color: rgb(230, 5, 64);\n"
+"    border-right-color: rgba(230, 5, 64,0);\n"
+"    border-top-color: rgba(230, 5, 64,1);\n"
+"    border-left-color: rgba(230, 5, 64,0);\n"
+"    border-style: outset;\n"
+"    border-radius: 10px;\n"
 "    \n"
 "}\n"
 "")
@@ -202,8 +208,11 @@ class Ui_MainWindow(object):
         self.TP_LEVEL_3_LABEL.setAlignment(QtCore.Qt.AlignCenter)
         self.TP_LEVEL_3_LABEL.setObjectName("TP_LEVEL_3_LABEL")
         self.EXECUTE_NEW_TRADE_BTN = QtWidgets.QPushButton(self.tab)
-        self.EXECUTE_NEW_TRADE_BTN.setGeometry(QtCore.QRect(250, 380, 141, 31))
-        self.EXECUTE_NEW_TRADE_BTN.setFlat(False)
+        self.EXECUTE_NEW_TRADE_BTN.setGeometry(QtCore.QRect(280, 380, 91, 31))
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/icons/icons/arrow-right-circle.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.EXECUTE_NEW_TRADE_BTN.setIcon(icon)
+        self.EXECUTE_NEW_TRADE_BTN.setFlat(True)
         self.EXECUTE_NEW_TRADE_BTN.setObjectName("EXECUTE_NEW_TRADE_BTN")
         self.MIN_15_BTN = QtWidgets.QPushButton(self.tab)
         self.MIN_15_BTN.setGeometry(QtCore.QRect(0, 30, 61, 28))
@@ -232,7 +241,10 @@ class Ui_MainWindow(object):
         self.MIN_60_BTN.setCheckable(True)
         self.MIN_60_BTN.setObjectName("MIN_60_BTN")
         self.PREPARE_NEW_TRADE_BTN = QtWidgets.QPushButton(self.tab)
-        self.PREPARE_NEW_TRADE_BTN.setGeometry(QtCore.QRect(20, 350, 121, 31))
+        self.PREPARE_NEW_TRADE_BTN.setGeometry(QtCore.QRect(20, 350, 131, 31))
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap(":/icons/icons/chevrons-right.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PREPARE_NEW_TRADE_BTN.setIcon(icon1)
         self.PREPARE_NEW_TRADE_BTN.setObjectName("PREPARE_NEW_TRADE_BTN")
         self.frame_5 = QtWidgets.QFrame(self.tab)
         self.frame_5.setGeometry(QtCore.QRect(200, 50, 201, 161))
@@ -291,13 +303,6 @@ class Ui_MainWindow(object):
         self.ORDER_TYPE_LABEL_13.setGeometry(QtCore.QRect(40, 130, 91, 17))
         self.ORDER_TYPE_LABEL_13.setAlignment(QtCore.Qt.AlignCenter)
         self.ORDER_TYPE_LABEL_13.setObjectName("ORDER_TYPE_LABEL_13")
-        self.EXECUTE_NEW_TRADE_BTN_2 = QtWidgets.QPushButton(self.tab)
-        self.EXECUTE_NEW_TRADE_BTN_2.setGeometry(QtCore.QRect(50, 410, 141, 31))
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/icons/icons/arrow-right-circle.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.EXECUTE_NEW_TRADE_BTN_2.setIcon(icon)
-        self.EXECUTE_NEW_TRADE_BTN_2.setFlat(False)
-        self.EXECUTE_NEW_TRADE_BTN_2.setObjectName("EXECUTE_NEW_TRADE_BTN_2")
         self.frame_5.raise_()
         self.PRICE_LIMIT_STOP_VALUE.raise_()
         self.SINGLE_TRADE_BTN.raise_()
@@ -331,7 +336,6 @@ class Ui_MainWindow(object):
         self.SYMBOLS_COMBOBOX.raise_()
         self.MIN_60_BTN.raise_()
         self.PREPARE_NEW_TRADE_BTN.raise_()
-        self.EXECUTE_NEW_TRADE_BTN_2.raise_()
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
@@ -438,14 +442,15 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab_4, "")
         self.frame_4 = QtWidgets.QFrame(self.frame)
         self.frame_4.setGeometry(QtCore.QRect(449, 1, 171, 381))
+        self.frame_4.setStyleSheet("")
         self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_4.setObjectName("frame_4")
         self.SEND_HIST_REQUEST_BTN = QtWidgets.QPushButton(self.frame_4)
-        self.SEND_HIST_REQUEST_BTN.setGeometry(QtCore.QRect(110, 10, 93, 28))
+        self.SEND_HIST_REQUEST_BTN.setGeometry(QtCore.QRect(110, 10, 186, 28))
         self.SEND_HIST_REQUEST_BTN.setObjectName("SEND_HIST_REQUEST_BTN")
         self.INIT_CONNECTOR_BTN = QtWidgets.QPushButton(self.frame_4)
-        self.INIT_CONNECTOR_BTN.setGeometry(QtCore.QRect(10, 10, 93, 28))
+        self.INIT_CONNECTOR_BTN.setGeometry(QtCore.QRect(0, 40, 186, 28))
         self.INIT_CONNECTOR_BTN.setObjectName("INIT_CONNECTOR_BTN")
         self.ACCOUNT_BALANCE_TEXT = QtWidgets.QLabel(self.frame_4)
         self.ACCOUNT_BALANCE_TEXT.setGeometry(QtCore.QRect(0, 100, 121, 17))
@@ -487,7 +492,7 @@ class Ui_MainWindow(object):
         self.BUY_STOP_BTN.setText(_translate("MainWindow", "BUY STOP"))
         self.TP_LEVEL_2_LABEL.setText(_translate("MainWindow", "TP LEVEL 2"))
         self.TP_LEVEL_3_LABEL.setText(_translate("MainWindow", "TP LEVEL 3"))
-        self.EXECUTE_NEW_TRADE_BTN.setText(_translate("MainWindow", "EXECUTE NEW TRADE"))
+        self.EXECUTE_NEW_TRADE_BTN.setText(_translate("MainWindow", "EXECUTE"))
         self.MIN_15_BTN.setText(_translate("MainWindow", "15 MIN"))
         self.BUY_BTN.setText(_translate("MainWindow", "BUY"))
         self.THREE_WAY_SPLIT_TRADE_BTN.setText(_translate("MainWindow", "SPLIT 3-WAY"))
@@ -508,7 +513,6 @@ class Ui_MainWindow(object):
         self.ORDER_TYPE_LABEL_12.setText(_translate("MainWindow", "STOP LOSS:"))
         self.LOT_SIZE_TEXT.setText(_translate("MainWindow", "__"))
         self.ORDER_TYPE_LABEL_13.setText(_translate("MainWindow", "TAKE PROFIT:"))
-        self.EXECUTE_NEW_TRADE_BTN_2.setText(_translate("MainWindow", "EXECUTE NEW TRADE"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Trade Execution"))
         self.tabWidget.setTabToolTip(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "<html><head/><body><p>Trade Execution</p></body></html>"))
         self.pushButton.setText(_translate("MainWindow", "Upcoming"))
