@@ -1,0 +1,13 @@
+distlib==0.3.5
+filelock==3.7.1
+MetaTrader5==5.0.37
+numpy==1.23.1
+pandas==1.4.3
+pandas-ta==0.3.14b0
+platformdirs==2.5.2
+PyQt5==5.15.7
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.11.0
+python-dateutil==2.8.2
+pytz==2022.1
+six==1.16.0

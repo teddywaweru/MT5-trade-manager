@@ -1,10 +1,6 @@
 """
 start
 """
-# from PyQt5 import QtCore, QtGui, QtWidgets
-# from pathlib import Path
-# import os
-# import sys
 import time
 import ui_manipulation
 import UI_templates.ui_converter as ui_conv
@@ -17,7 +13,6 @@ def setup():
     """
     ui_manipulation.setup_window()
     # print(time.asctime(time.localtime()))
-    # raw_input()
 
 if __name__ == "__main__":
     # convert .ui to .py. Only relevant for development stages.
@@ -25,4 +20,8 @@ if __name__ == "__main__":
     ui_conv.ui_converter()
     # #setup start
     setup()
+
+
+    #color palette: https://coolors.co/ffffff-5a75a6-bbbdbe-e60540-0c0f0a
+    #0c0f0a #ffffff #5a75a6 #bbbdbe #e60540 #0C1B33
     

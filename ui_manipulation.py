@@ -9,7 +9,7 @@ import time
 import asyncio
 import traceback
 from PyQt5 import QtWidgets
-from PyQt5.QtChart import QChart, QChartView, QLineSeries
+# from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QPainter
 # from pathlib import Path
@@ -41,12 +41,14 @@ class CallUi(QtWidgets.QMainWindow):
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
+        self.setWindowFlag(Qt.FramelessWindowHint)
 
         #Load Main UI objects
         self.ui.setupUi(self)
 
         #Generate available symbols from  current MT5 account
         self.symbols = self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
+
 
         #Populate Symbol groups combobox with static list of symbol groups
         self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
@@ -87,7 +89,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         # test_section(self)
 
-        load_test_components()
+        # load_test_components()
 
 
 

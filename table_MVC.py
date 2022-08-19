@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-from PySide6.QtCore import Qt
+# from PySide6.QtCore import Qt
 
 
 
@@ -44,7 +44,7 @@ class TableModel(QtCore.QAbstractTableModel):
         Returns:
             _type_: _description_
         """        
-        if role == Qt.ItemDataRole.DisplayRole:
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
             if isinstance(self._data, list):
                 return self._data[index.row()][index.column()]
             value = self._data.iloc[index.row()][index.column()]
