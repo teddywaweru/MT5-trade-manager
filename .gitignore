@@ -134,5 +134,5 @@ dmypy.json
 #VS Code Folder
 .vscode
 
-#icons
+#Raw PyQt5 icon Files
 icons
