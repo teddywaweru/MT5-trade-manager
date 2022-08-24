@@ -60,7 +60,6 @@ class Ui_MainWindow(object):
 "}\n"
 "QPushButton {\n"
 "    color: rgb(230, 232, 230);\n"
-"    color: rgb(255, 255, 0);\n"
 "    background-color: rgb(90, 117, 166);\n"
 "border-width: 1px;\n"
 "    border-bottom-color: rgb(230, 5, 64);\n"
@@ -148,8 +147,8 @@ class Ui_MainWindow(object):
         self.SYMBOL_GROUPS_COMBOBOX.setGeometry(QtCore.QRect(10, 70, 141, 23))
         self.SYMBOL_GROUPS_COMBOBOX.setToolTip("<html><head/><body><p>Select Symbol Group</p></body></html>")
         self.SYMBOL_GROUPS_COMBOBOX.setToolTipDuration(-1)
+        self.SYMBOL_GROUPS_COMBOBOX.setStyleSheet("border-bottom-color: rgb(219, 41, 85);")
         self.SYMBOL_GROUPS_COMBOBOX.setEditable(True)
-        self.SYMBOL_GROUPS_COMBOBOX.setCurrentText("")
         self.SYMBOL_GROUPS_COMBOBOX.setFrame(True)
         self.SYMBOL_GROUPS_COMBOBOX.setObjectName("SYMBOL_GROUPS_COMBOBOX")
         self.MIN_1440_BTN = QtWidgets.QPushButton(self.tab)
@@ -481,6 +480,7 @@ class Ui_MainWindow(object):
         self.TP_LEVEL_1_LABEL.setText(_translate("MainWindow", "TP LEVEL 1"))
         self.ORDER_TYPE_LABEL.setText(_translate("MainWindow", "ORDER TYPE"))
         self.TWO_WAY_SPLIT_TRADE_BTN.setText(_translate("MainWindow", "SPLIT 2-WAY"))
+        self.SYMBOL_GROUPS_COMBOBOX.setCurrentText(_translate("MainWindow", "Select Symbol Group"))
         self.MIN_1440_BTN.setText(_translate("MainWindow", "DAILY"))
         self.MINIMAL_TRADE_BTN.setText(_translate("MainWindow", "MINIMAL TRADE"))
         self.BUY_LIMIT_BTN.setText(_translate("MainWindow", "BUY LIMIT"))

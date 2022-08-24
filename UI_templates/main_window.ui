@@ -123,7 +123,6 @@
 }
 QPushButton {
 	color: rgb(230, 232, 230);
-	color: rgb(255, 255, 0);
 	background-color: rgb(90, 117, 166);
 border-width: 1px;
 	border-bottom-color: rgb(230, 5, 64);
@@ -399,11 +398,14 @@ border-width: 1px;
         <property name="toolTipDuration">
          <number>-1</number>
         </property>
+        <property name="styleSheet">
+         <string notr="true">border-bottom-color: rgb(219, 41, 85);</string>
+        </property>
         <property name="editable">
          <bool>true</bool>
         </property>
         <property name="currentText">
-         <string/>
+         <string>Select Symbol Group</string>
         </property>
         <property name="currentIndex">
          <number>-1</number>
