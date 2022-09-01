@@ -2,8 +2,8 @@
 start
 """
 import time
-import ui_manipulation
-import UI_templates.ui_converter as ui_conv
+import frontend.ui_manipulation as ui_manipulation
+import frontend.UI_templates.ui_converter as ui_conv
 print(f'{time.asctime(time.localtime())}: Start of Application')
 
 
