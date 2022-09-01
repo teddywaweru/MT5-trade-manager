@@ -39,7 +39,7 @@ import time
 # print('{}: Finished loading dwx_MVC'.format(time.asctime(time.localtime())))
 
 print('{}: Start loading mt5_conn'.format(time.asctime(time.localtime())))
-import backend.mt5_conn as mt5_conn
+import backend.mt5.mt5_conn as mt5_conn
 print('{}: Finished loading mt5_conn'.format(time.asctime(time.localtime())))
 
 import MetaTrader5 as mt5

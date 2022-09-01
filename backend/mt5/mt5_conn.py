@@ -12,7 +12,7 @@ from pandas import Timestamp, Timedelta, DataFrame, to_datetime
 
 from backend.data_manipulation import DataManipulation
 
-from .risk_management import RiskManagement
+from ..logic.risk_management import RiskManagement
 
 
 class Mt5Mvc():
