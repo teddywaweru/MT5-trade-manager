@@ -53,14 +53,53 @@ print('{}: Finished loading mt5'.format(time.asctime(time.localtime())))
 # 3. DWX_ZMQ Client MT4
 
 
-async def connect_mt():
+class GetSymbols:
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        def __init__(self, mt5= None):
+            """_summary_
+            """
+            self.mt5 = mt5
+
+            def segment_symbols(text):
+                """_summary_
+                """
+                return sorted((i._asdict()['name']for i in symbols_info \
+                    if text in i._asdict()['path'].lower() \
+                        and i._asdict()['trade_mode'] == 4))
+                        #Trade_mode=4 refers to symbols that have no trade restrictions
+                        # https://www.mql5.com/en/docs/constants/environment_state/marketinfoconstants#:~:text=of%20enumeration%20ENUM_SYMBOL_TRADE_MODE.-,ENUM_SYMBOL_TRADE_MODE,-Identifier
+
+            print(f"{time.asctime(time.localtime())}: Start Loading Symbols")
+            symbols_info = self.mt5.symbols_get()
+
+
+            self.forex = segment_symbols('forex')
+            self.metals = segment_symbols('metals')
+            self.indices = segment_symbols('indices')
+            self.stocks =  segment_symbols('stocks')
+            self.commodities =  segment_symbols('commodities')
+            self.crypto = segment_symbols('crypto')
+            self.energies = segment_symbols('energies')
+            self.futures = segment_symbols('futures')
+
+            print(f"{time.asctime(time.localtime())}: Finish Loading Symbols")
+
+
+
+
+async def connect_platform():
     """_summary_
     """
     if mt5.initialize():
-        return mt5, mt5_conn.Mt5Mvc(mt5)
+        return mt5, mt5_conn.Mt5Mvc(mt5), GetSymbols(mt5=mt5)
 
 
     else:
+        #{TODO}
         print('MT5 has not been initialized.')
         mt5.shutdown()
 

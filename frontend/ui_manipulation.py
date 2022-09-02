@@ -13,9 +13,8 @@ from PyQt5 import QtWidgets
 # from PyQt5.QtCore import Qt, QPointF
 # from PyQt5.QtGui import QPainter
 from .UI_templates import main_window
-from backend.mt_connector import connect_mt as conn_mt
+from backend.connect_platform import connect_platform
 from frontend.table_MVC import TableModel
-from .buttons import Button
 
 print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
 
@@ -39,10 +38,9 @@ class CallUi(QtWidgets.QMainWindow):
 
         #Load Main UI objects
         self.ui.setupUi(self)
-        def get_mt5_conn():
-            return self.backend_mt5.GetSymbols(mt5 = self.mt5_api)
-        #Generate available symbols from  current MT5 account
-        self.symbols = get_mt5_conn()
+
+        self.mt5_api, self.backend_mt5, self.symbols = asyncio.run(connect_platform())
+
         #Populate Symbol groups combobox with static list of symbol groups
         self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.backend_mt5.symbol_groups())
         def get_combobox():
@@ -50,16 +48,6 @@ class CallUi(QtWidgets.QMainWindow):
 
 
         # Load Connection Object else dummy data
-        def conn_mt5():
-            try:
-                return asyncio.run(conn_mt())
-            except:
-                #{TODO}
-                traceback.print_exc()
-                return
-
-        self.mt5_api, self.backend_mt5 = conn_mt5()
-
 
         # Load TABLE for trades
         self.load_trades()
