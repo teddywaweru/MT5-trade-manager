@@ -33,14 +33,6 @@ class Mt5Mvc():
         # Parameter calculations from RiskManagement class
         self.trade_risk_calc = None
 
-    def symbol_groups(self):
-        """_summary_
-
-        Returns:
-            _type_: _description_
-        """
-        return ['FOREX', 'METALS', 'INDICES', 'COMMODITIES', \
-            'CRYPTO', 'ENERGIES', 'FUTURES']
 
 
 

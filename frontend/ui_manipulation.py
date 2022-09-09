@@ -13,7 +13,7 @@ from PyQt5 import QtWidgets
 # from PyQt5.QtCore import Qt, QPointF
 # from PyQt5.QtGui import QPainter
 from .UI_templates import main_window
-from backend.connect_platform import connect_platform
+from backend.connect_platform import connect_platform, load_dummy_backend
 from frontend.table_MVC import TableModel
 
 print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
@@ -40,11 +40,11 @@ class CallUi(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         self.mt5_api, self.backend_mt5, self.symbols = asyncio.run(connect_platform())
-
+    
         #Populate Symbol groups combobox with static list of symbol groups
-        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.backend_mt5.symbol_groups())
+        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.symbols.SYMBOL_GROUPS)
         def get_combobox():
-            return self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.backend_mt5.symbol_groups())
+            return self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.symbols.SYMBOL_GROUPS)
 
 
         # Load Connection Object else dummy data

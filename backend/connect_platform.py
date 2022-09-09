@@ -26,6 +26,7 @@ dwx_zmq: https://github.com/darwinex/dwx-zeromq-connector
 
 # pylint: disable=no-member
 import time
+import traceback
 # from os.path import exists
 # print('{}: Started loading dwx_connector file'.format(time.asctime(time.localtime())))
 # Load the dwx_zmq object
@@ -37,22 +38,20 @@ import time
 
 # import dwx_MVC
 # print('{}: Finished loading dwx_MVC'.format(time.asctime(time.localtime())))
-
-print('{}: Start loading mt5_conn'.format(time.asctime(time.localtime())))
-import backend.mt5.mt5_conn as mt5_conn
-print('{}: Finished loading mt5_conn'.format(time.asctime(time.localtime())))
-
-import MetaTrader5 as mt5
-print('{}: Finished loading mt5'.format(time.asctime(time.localtime())))
-
-
-
 #function order of preference for connecting to the MT4/ MT5 platforms:
 # 1. MT5 API
 # 2. DWX Client Connect MT5
 # 3. DWX_ZMQ Client MT4
 
 
+
+print('{}: Start loading mt5_conn'.format(time.asctime(time.localtime())))
+import backend.mt5.mt5_conn as mt5_conn
+print('{}: Finished loading mt5_conn'.format(time.asctime(time.localtime())))
+
+
+
+#Coollect the Symbols from MetaTrader5 platform
 class GetSymbols:
         """_summary_
 
@@ -63,6 +62,8 @@ class GetSymbols:
             """_summary_
             """
             self.mt5 = mt5
+
+            self.SYMBOL_GROUPS = ['FOREX', 'METALS', 'INDICES', 'COMMODITIES', 'CRYPTO', 'ENERGIES', 'FUTURES']
 
             def segment_symbols(text):
                 """_summary_
@@ -94,18 +95,33 @@ class GetSymbols:
 async def connect_platform():
     """_summary_
     """
-    if mt5.initialize():
+    try:
+        #may fail if:
+        # -MetaTrader API is not available in the environment
+        # -MetaTrader is not installed.
+        import MetaTrader5 as mt5
+
+        print('{}: Finished loading mt5'.format(time.asctime(time.localtime())))
+        mt5.initialize()
+
         return mt5, mt5_conn.Mt5Mvc(mt5), GetSymbols(mt5=mt5)
 
 
-    else:
+    except:
         #{TODO}
+        traceback.print_exc()
         print('MT5 has not been initialized.')
         mt5.shutdown()
+        return load_dummy_backend()
 
 
+async def load_dummy_backend():
+    from dummy_data import Dummy_MT5, Dummy_Symbols
 
-
+    return (Dummy_MT5, 
+            mt5_conn.Mt5Mvc(Dummy_MT5),
+            Dummy_Symbols)
+ 
 
         #For the dwx_connect EA, the folder location of the active platform is
         #required. FOLDER_LIST shall contain user imputed list of possible folders
