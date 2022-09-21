@@ -21,5 +21,5 @@ class Dummy_Symbols:
         self.futures = [None
         ]
     def __str__(self) -> str:
-         return "Pre-populated Dummy_ Symbols"
+         return "Pre-populated Dummy_Symbols"
 

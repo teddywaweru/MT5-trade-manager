@@ -135,7 +135,7 @@ class Mt5Mvc():
 
         _symbol = hist_request.get('symbol', None)
         #A00 Change timestamp from daily.
-        # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15
+        # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15, which is a function call to the API.
         _timeframe = f"{MT5_OBJ_STRING}.{TIMEFRAMES_PERIODS[hist_request.get('timeframe', 1440)]}"
 
         _start = hist_request.get('start', None)
