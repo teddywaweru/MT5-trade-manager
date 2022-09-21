@@ -10,10 +10,10 @@ import asyncio
 import traceback
 from PyQt5 import QtWidgets
 # from PyQt5.QtChart import QChart, QChartView, QLineSeries
-from PyQt5.QtCore import Qt, QPointF
-from PyQt5.QtGui import QPainter
+# from PyQt5.QtCore import Qt, QPointF
+# from PyQt5.QtGui import QPainter
 from .UI_templates import main_window
-from backend.mt_connector import connect_mt as conn_mt
+from backend.connect_platform import connect_platform, load_dummy_backend
 from frontend.table_MVC import TableModel
 
 print(f'{time.asctime(time.localtime())}: Start of Loading UI Manipulation Code')
@@ -28,41 +28,28 @@ class CallUi(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
 
-        # Load DWX Connection Object
-        # self.conn_api_mvc = DwxModel()
-        try:
-            self.conn_api, self.conn_api_mvc = asyncio.run(conn_mt())
-        except:
-            traceback.print_exc()
-            return
 
+##################################################################
+    #INITIALIZE FUNDAMENTAL VARIABLES & LOAD DATA CONNECTIONS
+##################################################################
 
         # Create Main UI Instance
         self.ui = main_window.Ui_MainWindow()
 
-        #To enable frameless Window
-        # self.setWindowFlag(Qt.FramelessWindowHint)
-
         #Load Main UI objects
         self.ui.setupUi(self)
 
-        def get_mt5_conn():
-            return self.conn_api_mvc.GetSymbols(mt5 = self.conn_api)
-        #Generate available symbols from  current MT5 account
-        self.symbols = get_mt5_conn()
-
+        self.mt5_api, self.backend_mt5, self.symbols = asyncio.run(connect_platform())
+    
         #Populate Symbol groups combobox with static list of symbol groups
-        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
+        self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.symbols.SYMBOL_GROUPS)
         def get_combobox():
-            return self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.conn_api_mvc.symbol_groups())
-        #Set current index to -1 so that combobox remains empty
-        #CurrentIndex is changed to 0 after adding items
-        self.ui.SYMBOL_GROUPS_COMBOBOX.setCurrentIndex(-1)
+            return self.ui.SYMBOL_GROUPS_COMBOBOX.addItems(self.symbols.SYMBOL_GROUPS)
 
-        # Load widget functions (BTN, COMBOBOX) for reacting to actions
-        self.setup_btn_connect()
-        self.setup_combobox_connect()
 
+        # Load Connection Object else dummy data
+
+        # Load TABLE for trades
         self.load_trades()
 
         #New Prepared Trade Object
@@ -89,72 +76,116 @@ class CallUi(QtWidgets.QMainWindow):
             self.ui.MIN_60_BTN, self.ui.MIN_240_BTN,
             self.ui.MIN_1440_BTN,
         )
+        
 
-        # test_section(self)
+##################################################################
+    #INITIALIZE UI COMPONENT
+##################################################################
 
-        # load_test_components()
+        #To enable frameless Window
+        # self.setWindowFlag(Qt.FramelessWindowHint)
 
+        #Set current index to -1 so that combobox remains empty
+        #CurrentIndex is changed to 0 after adding items
+        self.ui.SYMBOL_GROUPS_COMBOBOX.setCurrentIndex(-1)
 
+        # Load BUTTON functions for reacting to actions
+        self.setup_btn_connect()
 
+        # Load COMBOBOX functions for reacting to actions
+        self.setup_combobox_connect()
+
+        # Load CALENDAR functions for reacting to actions
         self.ui.calendarWidget.clicked.connect(
             lambda: self.calendar_clicked(self.ui.calendarWidget))
+
+            # Load TEST functions for reacting to actions
+            # test_section(self)
+
 
 
     def test_trade(self):
         pass
 
-        # series.append(0,6)
-        # series.append(2,4)
-        # series.append(3,8)
-        # series.append(6,10)
-
-        # series << QPointF(11,1) << QPointF(13,6) << QPointF(15,6) << QPointF(17,8)
-
-        # chart = QChart()
-        # chart.addSeries(series)
-        # chart.setAnimationOptions(QChart.SeriesAnimations)
-        # chart.setTitle('Line Chart Example')
-
-        # chart.legend().setVisible(True)
-
-        # chart.legend().setAlignment(Qt.AlignBottom)
-
-        # chartview = QChartView(chart)
-
-        # chartview.setRenderHint(QPainter.Antialiasing)
-
-
-
-
-
-
-    def calendar_clicked(self,calendar):
-        print('yes!!')
-        print(calendar.selectedDate())
-
-        #ADD textlabel function to be loaded, similar to setupBtnconnect
-        # also for text edits,
-        #writing functions instead of loading in the __init__ will make the code more organized.
-
-
-
         # self.table_model = TableModel(data)
         # self.ui.tableView.setModel(self.table_model)
-    def load_trades(self):
+
+
+
+
+
+##################################################################
+    # UI COMPONENT FUNCS
+##################################################################
+
+
+    def setup_btn_connect(self):
+        """[Initiate button functions]
         """
-        _summary_
-        """
-        trades = self.conn_api_mvc.get_current_trades()
-        self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
-        self.ui.CURRENT_TRADES_TABLE \
-                .horizontalHeader() \
-                .setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.ui.INIT_CONNECTOR_BTN.clicked.connect(
+            self.backend_mt5.get_current_trades)
+
+        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(
+            self.backend_mt5.send_hist_request)
+        self.ui.PREPARE_NEW_TRADE_BTN.clicked.connect(self.prepare_new_trade)
+        self.ui.EXECUTE_NEW_TRADE_BTN.clicked.connect(self.execute_new_trade)
+
+        self.ui.SELL_BTN.clicked.connect(
+            lambda: self.order_type_btn_clicked(self.ui.SELL_BTN))
+
+        self.ui.BUY_BTN.clicked.connect(
+            lambda: self.order_type_btn_clicked(self.ui.BUY_BTN))
+
+        self.ui.BUY_LIMIT_BTN.clicked.connect(
+            lambda: self.order_type_btn_clicked(self.ui.BUY_LIMIT_BTN))
+
+        self.ui.SELL_LIMIT_BTN.clicked.connect(
+            lambda: self.order_type_btn_clicked(self.ui.SELL_LIMIT_BTN))
+
+        self.ui.TWO_WAY_SPLIT_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(
+                self.ui.TWO_WAY_SPLIT_TRADE_BTN))
+
+        self.ui.THREE_WAY_SPLIT_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(
+                self.ui.THREE_WAY_SPLIT_TRADE_BTN))
+
+        self.ui.SINGLE_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(self.ui.SINGLE_TRADE_BTN))
+
+        self.ui.MINIMAL_TRADE_BTN.clicked.connect(
+            lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN))
+
+        self.ui.MIN_1_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN))
+
+        self.ui.MIN_5_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN))
+
+        self.ui.MIN_15_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_15_BTN))
+
+        self.ui.MIN_30_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_30_BTN))
+
+        self.ui.MIN_60_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN))
+
+        self.ui.MIN_240_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_240_BTN))
+
+        self.ui.MIN_1440_BTN.clicked.connect(
+            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1440_BTN)
+        )
+
+        self.ui.CURRENT_TRADES_TABLE.doubleClicked.connect(self.clicked_table)
 
 
     def disable_execute_trade_btn(self):
         """Function to disable the Execute Trade button.
         """
         self.ui.EXECUTE_NEW_TRADE_BTN.setEnabled(False)
+
 
     #Change the current text in the alternate combobox to None
     def symbol_groups_combobox_text_changed(self, symbol_group_combobox):
@@ -193,6 +224,15 @@ class CallUi(QtWidgets.QMainWindow):
 
         print(f'Current Symbol Group to trade: {symbol_group_combobox.currentText()}.')
 
+
+    def setup_combobox_connect(self):
+        """_summary_
+        """
+        self.ui.SYMBOL_GROUPS_COMBOBOX.currentTextChanged.connect(
+            lambda: self.symbol_groups_combobox_text_changed(self.ui.SYMBOL_GROUPS_COMBOBOX)
+        )
+
+
     def order_type_btn_clicked(self, order_btn):
         """Styling & disabling for order buttons depending on which one is selected.
 
@@ -224,6 +264,7 @@ class CallUi(QtWidgets.QMainWindow):
                 )
 
         else: order_btn.setStyleSheet('')
+
 
     def order_strategy_btn_clicked(self, order_strategy):
         """Styling & disabling for strategy buttons depending on
@@ -261,6 +302,7 @@ class CallUi(QtWidgets.QMainWindow):
 
         else: order_strategy.setStyleSheet('')
 
+
     def order_timeframe_btn_clicked(self, order_timeframe):
         """[summary]
 
@@ -287,78 +329,6 @@ class CallUi(QtWidgets.QMainWindow):
             else: order_timeframe.setStyleSheet('')
 
 
-    def setup_btn_connect(self):
-        """[Initiate button functions]
-        """
-        self.ui.INIT_CONNECTOR_BTN.clicked.connect(self.conn_api_mvc.get_current_trades)
-
-        # test_hist_req_data = [
-        #     {'_symbol': 'EURUSD',
-        #     '_timeframe': 1440,
-        #     '_start': '2021.01.01 00:00:00',
-        #     '_end': pd.Timestamp.now().strftime('%Y.%m.%d %H:%M:00') }
-        # ]
-        self.ui.SEND_HIST_REQUEST_BTN.clicked.connect(self.conn_api_mvc.send_hist_request)
-        self.ui.PREPARE_NEW_TRADE_BTN.clicked.connect(self.prepare_new_trade)
-        self.ui.EXECUTE_NEW_TRADE_BTN.clicked.connect(self.execute_new_trade)
-
-        self.ui.SELL_BTN.clicked.connect(
-            lambda: self.order_type_btn_clicked(self.ui.SELL_BTN))
-
-        self.ui.BUY_BTN.clicked.connect(
-            lambda: self.order_type_btn_clicked(self.ui.BUY_BTN))
-
-        self.ui.BUY_LIMIT_BTN.clicked.connect(
-            lambda: self.order_type_btn_clicked(self.ui.BUY_LIMIT_BTN))
-
-        self.ui.SELL_LIMIT_BTN.clicked.connect(
-            lambda: self.order_type_btn_clicked(self.ui.SELL_LIMIT_BTN))
-
-        self.ui.TWO_WAY_SPLIT_TRADE_BTN.clicked.connect(
-            lambda: self.order_strategy_btn_clicked(self.ui.TWO_WAY_SPLIT_TRADE_BTN))
-
-        self.ui.THREE_WAY_SPLIT_TRADE_BTN.clicked.connect(
-            lambda: self.order_strategy_btn_clicked(self.ui.THREE_WAY_SPLIT_TRADE_BTN))
-
-        self.ui.SINGLE_TRADE_BTN.clicked.connect(
-            lambda: self.order_strategy_btn_clicked(self.ui.SINGLE_TRADE_BTN))
-
-        self.ui.MINIMAL_TRADE_BTN.clicked.connect(
-            lambda: self.order_strategy_btn_clicked(self.ui.MINIMAL_TRADE_BTN)
-        )
-
-        self.ui.MIN_1_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1_BTN)
-        )
-
-        self.ui.MIN_5_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_5_BTN)
-        )
-
-        self.ui.MIN_15_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_15_BTN)
-        )
-
-        self.ui.MIN_30_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_30_BTN)
-        )
-
-        self.ui.MIN_60_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_60_BTN)
-        )
-
-        self.ui.MIN_240_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_240_BTN)
-        )
-
-        self.ui.MIN_1440_BTN.clicked.connect(
-            lambda: self.order_timeframe_btn_clicked(self.ui.MIN_1440_BTN)
-        )
-
-
-        self.ui.CURRENT_TRADES_TABLE.doubleClicked.connect(self.clicked_table)
-
-
     def clicked_table(self):
         """_summary_
 
@@ -372,15 +342,26 @@ class CallUi(QtWidgets.QMainWindow):
 
         return True
 
+
+
+
+    def calendar_clicked(self,calendar):
+        print('yes!!')
+        print(calendar.selectedDate())
+
+
+    def load_trades(self):
+        """
+        _summary_
+        """
+        trades = self.backend_mt5.get_current_trades()
+        self.ui.CURRENT_TRADES_TABLE.setModel(TableModel(trades))
+        # self.ui.CURRENT_TRADES_TABLE \
+        #         .horizontalHeader() \
+        #         .setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+
         # self.ui.tableView.setRowCount(5)
         # self.ui.pushButton.clicked.connect(self.myFunction)
-
-    def setup_combobox_connect(self):
-        """_summary_
-        """
-        self.ui.SYMBOL_GROUPS_COMBOBOX.currentTextChanged.connect(
-            lambda: self.symbol_groups_combobox_text_changed(self.ui.SYMBOL_GROUPS_COMBOBOX)
-        )
 
     # def setup_combobox_connect(self):
     #     self.ui.TP_LEVEL_spinBox.connect()
@@ -455,7 +436,7 @@ class CallUi(QtWidgets.QMainWindow):
 
 
         try:
-            self.prep_new_trade = self.conn_api_mvc.prepare_new_trade(new_trade_dict)
+            self.prep_new_trade = self.backend_mt5.prepare_new_trade(new_trade_dict)
 
             self.ui.PIP_VALUE_TEXT.setText(str(round(self.prep_new_trade.symbol_value, 4)))
             self.ui.ATR_IN_PIPS_TEXT.setText(str(round(self.prep_new_trade.atr_in_points, 2)))
@@ -501,6 +482,7 @@ class CallUi(QtWidgets.QMainWindow):
             print('Select a trading strategy.')
             return
 
+        timeframe = ""
         for i in self.timeframe_btns:
             if i.isChecked():
                 timeframe = int(''.join([n for n in i.objectName().split('_') if n.isdigit()]))
@@ -511,7 +493,7 @@ class CallUi(QtWidgets.QMainWindow):
 
 
         try:
-            self.conn_api_mvc.new_trade(
+            self.backend_mt5.new_trade(
                 {
                 'action': 'OPEN',
                 'type': self.prep_new_trade.trade_dict['order'],      #1 for SELL, O for BUY
@@ -557,6 +539,18 @@ def setup_window():
     print(f"{time.asctime(time.localtime())}: Finished loading App GUI")
     now_window.show()
     sys.exit(app.exec_())
+
+
+
+
+
+
+
+
+
+###########################################################
+# ARCHIVES
+###########################################################
 
 
         #ist of instrument comboboxes. For iterations

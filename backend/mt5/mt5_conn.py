@@ -12,7 +12,7 @@ from pandas import Timestamp, Timedelta, DataFrame, to_datetime
 
 from backend.data_manipulation import DataManipulation
 
-from .risk_management import RiskManagement
+from ..logic.risk_management import RiskManagement
 
 
 class Mt5Mvc():
@@ -33,14 +33,6 @@ class Mt5Mvc():
         # Parameter calculations from RiskManagement class
         self.trade_risk_calc = None
 
-    def symbol_groups(self):
-        """_summary_
-
-        Returns:
-            _type_: _description_
-        """
-        return ['FOREX', 'METALS', 'INDICES', 'COMMODITIES', \
-            'CRYPTO', 'ENERGIES', 'FUTURES']
 
 
 
@@ -143,7 +135,7 @@ class Mt5Mvc():
 
         _symbol = hist_request.get('symbol', None)
         #A00 Change timestamp from daily.
-        # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15
+        # MT5 Functionality, requires the timeframe to be stated as self.mt5_mvc.TIMEFRAME_M15, which is a function call to the API.
         _timeframe = f"{MT5_OBJ_STRING}.{TIMEFRAMES_PERIODS[hist_request.get('timeframe', 1440)]}"
 
         _start = hist_request.get('start', None)
