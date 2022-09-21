@@ -1,5 +1,6 @@
-def test_section(call_ui):
+from frontend.ui_manipulation import CallUi 
+def test_section():
+    assert(True) == True
 
-    print(call_ui.timeframe_btns)
 
 

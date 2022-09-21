@@ -1,8 +1,7 @@
-import sys
-sys.path.insert(1, 'FX_MT4_app')
 import backend.data_manipulation as data_manipulation
 import pandas as pd
 import numpy as np
+
 
 data = pd.DataFrame({
     'open': np.random.rand(100),
